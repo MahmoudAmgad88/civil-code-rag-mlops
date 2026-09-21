@@ -1,0 +1,30 @@
+# Python environment
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Source documents and generated data
+*.pdf
+data/raw_pages/
+data/index/
+
+# Temporary files and local experiments
+*.zip
+spikes/
+.ipynb_checkpoints/
+
+# Local MLOps artifacts
+mlruns/
+wandb/
+outputs/

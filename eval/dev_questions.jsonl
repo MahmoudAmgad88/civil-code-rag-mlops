@@ -1,0 +1,13 @@
+
+{"id":"AR-01","question":"المادة ٢٠ من القانون المدني","language":"ar","category":"lookup","expected_article_ids":["CC-20"],"answerable":true}
+{"id":"AR-02","question":"ما نص المادة ٩١؟","language":"ar","category":"lookup","expected_article_ids":["CC-91"],"answerable":true}
+{"id":"AR-03","question":"ما نص المادة ٦٠ من القانون المدني؟","language":"ar","category":"lookup","expected_article_ids":["CC-60"],"answerable":false}
+{"id":"AR-04","question":"متى ينتج التعبير عن الإرادة أثره القانوني؟","language":"ar","category":"semantic","expected_article_ids":["CC-91"],"answerable":true}
+{"id":"AR-05","question":"ما الذي يحدث للمتعاقدين عند فسخ العقد؟","language":"ar","category":"semantic","expected_article_ids":["CC-160"],"answerable":true}
+{"id":"AR-06","question":"ما عقوبة جريمة القتل العمد في قانون العقوبات المصري؟","language":"ar","category":"out_of_scope","expected_article_ids":[],"answerable":false}
+{"id":"EN-01","question":"Show me Article 20 of the Egyptian Civil Code.","language":"en","category":"lookup","expected_article_ids":["CC-20"],"answerable":true}
+{"id":"EN-02","question":"What does Article 91 say?","language":"en","category":"lookup","expected_article_ids":["CC-91"],"answerable":true}
+{"id":"EN-03","question":"Show me the text of Article 60 of the Egyptian Civil Code.","language":"en","category":"lookup","expected_article_ids":["CC-60"],"answerable":false}
+{"id":"EN-04","question":"When does an expression of intent take legal effect?","language":"en","category":"semantic","expected_article_ids":["CC-91"],"answerable":true}
+{"id":"EN-05","question":"What happens to the parties when a contract is rescinded?","language":"en","category":"semantic","expected_article_ids":["CC-160"],"answerable":true}
+{"id":"EN-06","question":"What is the punishment for intentional murder under the Egyptian Penal Code?","language":"en","category":"out_of_scope","expected_article_ids":[],"answerable":false}
