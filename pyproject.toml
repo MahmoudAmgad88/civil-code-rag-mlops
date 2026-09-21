@@ -1,0 +1,56 @@
+[project]
+name = "civil-code-rag"
+version = "0.1.0"
+description = "Bilingual Egyptian Civil Code RAG application for hands-on MLOps practice"
+
+readme = "README.md"
+authors = [
+    { name = "MahmoudAmgad88", email = "eng.salakawy@gmail.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.141.1",
+    "numpy>=2.4.6",
+    "openai>=3.16.2",
+    "pydantic>=2",
+    "pydantic-settings>=2.15.0",
+    "pymupdf>=1.28.2",
+    "pypdf>=6.19.0",
+    "structlog>=26.1.0",
+    "uvicorn[standard]>=0.53.0",
+]
+
+[project.scripts]
+civil-code-rag = "civil_code_rag:main"
+
+[project.optional-dependencies]
+embeddings = [
+    "sentence-transformers>=6.1.0",
+    "torch>=2.14.0",
+]
+dev = [
+    "httpx>=0.28.1",
+    "pre-commit>=4.6.2",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.16.8",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.7,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.coverage.run]
+branch = true
+omit = [
+    "tools/*",
+]
+
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
