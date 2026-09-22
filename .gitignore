@@ -28,3 +28,7 @@ spikes/
 mlruns/
 wandb/
 outputs/
+
+# Windows metadata
+desktop.ini
+Thumbs.db

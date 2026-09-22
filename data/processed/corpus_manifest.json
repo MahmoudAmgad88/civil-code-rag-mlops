@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "parser_version": "v1-current-mvp",
+  "source_pdf_sha256": "2d6419fb262dab712f7bf5f6e31834bea74fbcf03b78ae081dd35d156915eebf",
+  "source_pdf_pages": 170,
+  "corpus_sha256": "6ef3cbe6abebea71f7dfca6b8a2f6c5650ae4c9082b4ec28a4e5b5cc32609ebc",
+  "record_count": 162,
+  "article_range": [
+    1,
+    160
+  ],
+  "covered_pages": [
+    1,
+    18
+  ],
+  "repealed_ranges": [
+    [
+      54,
+      80
+    ]
+  ],
+  "languages": [
+    "ar",
+    "en"
+  ],
+  "search_record_count": 268,
+  "coverage_statement_ar": "هذه نسخة تجريبية تغطي المواد من 1 إلى 160 فقط من الصفحات 1 إلى 18 من ملف القانون المدني المصري. لا تمثل تغطية كاملة للقانون أو تحققًا من حالته القانونية الحالية.",
+  "coverage_statement_en": "This experimental corpus covers Articles 1–160 from PDF pages 1–18 only. It does not cover the entire Egyptian Civil Code or verify current legal status."
+}
