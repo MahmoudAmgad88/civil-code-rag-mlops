@@ -1,8 +1,6 @@
 
 """Ask a question using exact lookup or semantic RAG."""
 
-import re
-
 from scripts.build_retrieval_context import (
     ARTICLES_PATH,
     load_article_lookup,
@@ -19,38 +17,10 @@ from scripts.query_router import route_question
 
 from scripts.scope_guard import is_explicitly_out_of_scope
 
-def detect_language(question):
-    """Detect the question language for our simple Arabic/English MVP."""
-
-    # Arabic letters -> Arabic question.
-    if re.search(r"[\u0621-\u064A]", question):
-        return "ar"
-
-    # Otherwise, use English for this bilingual MVP.
-    return "en"
-
-def validate_citations(answer, context):
-    """Reject article citations that are absent from retrieved sources."""
-
-    # Source IDs available in the context sent to the LLM.
-    allowed_ids = set(
-        re.findall(r"\[SOURCE:\s*((?:CC|PROM)-\d+)\]", context)
-    )
-
-    # Article IDs cited in the generated answer.
-    cited_ids = set(
-        re.findall(r"\[((?:CC|PROM)-\d+)\]", answer)
-    )
-
-    unknown_ids = cited_ids - allowed_ids
-
-    if unknown_ids:
-        raise ValueError(
-            f"Answer cites sources that were not retrieved: "
-            f"{sorted(unknown_ids)}"
-        )
-
-    return cited_ids
+from civil_code_rag.core.answer_rules import (
+    detect_language,
+    validate_citations,
+)
 
 def ask(question):
     """Route one question and display its result."""

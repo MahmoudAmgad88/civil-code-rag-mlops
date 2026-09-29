@@ -1,0 +1,1 @@
+"""Core business rules for the Civil Code RAG application."""

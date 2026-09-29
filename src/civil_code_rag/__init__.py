@@ -1,0 +1,1 @@
+"""Bilingual Egyptian Civil Code RAG application."""

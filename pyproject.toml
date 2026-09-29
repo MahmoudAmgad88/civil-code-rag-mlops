@@ -20,8 +20,6 @@ dependencies = [
     "uvicorn[standard]>=0.53.0",
 ]
 
-[project.scripts]
-civil-code-rag = "civil_code_rag:main"
 
 [project.optional-dependencies]
 embeddings = [
