@@ -2,7 +2,6 @@
 
 import re
 
-
 OUT_OF_SCOPE_PATTERNS = [
     re.compile(r"قانون\s+العقوبات"),
     re.compile(r"\bpenal\s+code\b", re.IGNORECASE),

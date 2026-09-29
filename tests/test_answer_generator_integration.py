@@ -1,11 +1,13 @@
-"""Verify that the new and legacy generators build identical LLM requests."""
+"""Verify the stable OpenAI request contract without network calls."""
 
 from types import SimpleNamespace
 
 import pytest
 
-import scripts.first_llm_call as legacy
-from civil_code_rag.generation.answer_generator import AnswerGenerator
+from civil_code_rag.generation.answer_generator import (
+    SYSTEM_INSTRUCTIONS,
+    AnswerGenerator,
+)
 
 
 class FakeResponses:
@@ -32,43 +34,18 @@ class FakeResponses:
         ),
     ],
 )
-def test_new_generator_matches_legacy_request(
-    monkeypatch,
-    question,
-    context,
-):
-    # Give each implementation its own request recorder.
-    legacy_responses = FakeResponses()
-    new_responses = FakeResponses()
-
-    legacy_client = SimpleNamespace(responses=legacy_responses)
-    new_client = SimpleNamespace(responses=new_responses)
-
-    # Satisfy the legacy API-key check using a dummy value.
-    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
-
-    # Prevent the legacy function from creating a real OpenAI client.
-    monkeypatch.setattr(
-        legacy,
-        "OpenAI",
-        lambda: legacy_client,
-    )
-
-    legacy_answer = legacy.generate_answer(
-        question=question,
-        context=context,
-    )
-
+def test_generator_request_contract(question, context):
+    responses = FakeResponses()
+    client = SimpleNamespace(responses=responses)
     generator = AnswerGenerator(
-        client=new_client,
-        model_name=legacy.LLM_MODEL,
+        client=client,
+        model_name="gpt-4.1-mini",
     )
+    answer = generator.generate(question=question, context=context)
 
-    new_answer = generator.generate(
-        question=question,
-        context=context,
-    )
-
-    assert new_answer == legacy_answer
-    assert new_responses.last_request == legacy_responses.last_request
-    assert new_responses.last_request["store"] is False
+    assert answer == "Fake answer [CC-91]."
+    assert responses.last_request["model"] == "gpt-4.1-mini"
+    assert responses.last_request["instructions"] == SYSTEM_INSTRUCTIONS
+    assert responses.last_request["store"] is False
+    assert question in responses.last_request["input"]
+    assert context in responses.last_request["input"]

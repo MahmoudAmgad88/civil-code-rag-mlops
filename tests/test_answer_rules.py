@@ -6,10 +6,6 @@ from civil_code_rag.core.answer_rules import (
     detect_language,
     validate_citations,
 )
-from scripts.ask import (
-    detect_language as legacy_detect_language,
-    validate_citations as legacy_validate_citations,
-)
 
 
 @pytest.mark.parametrize(
@@ -39,8 +35,3 @@ def test_reject_citation_absent_from_context():
         match="Answer cites sources that were not retrieved",
     ):
         validate_citations(answer, context)
-
-
-def test_legacy_imports_use_the_same_functions():
-    assert legacy_detect_language is detect_language
-    assert legacy_validate_citations is validate_citations

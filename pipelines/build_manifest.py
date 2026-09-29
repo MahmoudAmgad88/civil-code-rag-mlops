@@ -4,7 +4,6 @@ import hashlib
 import json
 from pathlib import Path
 
-
 # 1. Project paths
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
@@ -46,6 +45,7 @@ def build_manifest() -> dict:
     """Build metadata describing the current RAG corpus."""
 
     from collections import Counter
+
     from pypdf import PdfReader
 
     articles = load_jsonl(ARTICLES_PATH)

@@ -2,7 +2,6 @@
 
 import re
 
-
 ARTICLE_PATTERN = re.compile(
     r"(?:الماد[ةه]|article)\s*([0-9٠-٩۰-۹]+)",
     re.IGNORECASE,

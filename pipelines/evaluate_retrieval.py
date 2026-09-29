@@ -5,12 +5,11 @@ from pathlib import Path
 
 from sentence_transformers import SentenceTransformer
 
-from scripts.search_articles import (
+from pipelines.search_articles import (
     MODEL_NAME,
     load_index,
     search_articles,
 )
-
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 QUESTIONS_PATH = PROJECT_ROOT / "eval" / "dev_questions.jsonl"

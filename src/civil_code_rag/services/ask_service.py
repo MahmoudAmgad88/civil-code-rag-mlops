@@ -1,13 +1,14 @@
 """Coordinate the Civil Code question-answering workflow."""
 
-from civil_code_rag.core.query_router import route_question
-from civil_code_rag.core.scope_guard import is_explicitly_out_of_scope
-from civil_code_rag.repositories.article_repository import ArticleRepository
-from civil_code_rag.retrieval.context_builder import build_context
 from civil_code_rag.core.answer_rules import (
     detect_language,
     validate_citations,
 )
+from civil_code_rag.core.query_router import route_question
+from civil_code_rag.core.scope_guard import is_explicitly_out_of_scope
+from civil_code_rag.repositories.article_repository import ArticleRepository
+from civil_code_rag.retrieval.context_builder import build_context
+
 
 class AmbiguousArticleRequestError(Exception):
     """The user's article request does not specify one supported intent."""
@@ -232,7 +233,4 @@ class AskService:
                 "answer": answer,
                 "cited_article_ids": sorted(cited_ids),
             }
-        # Semantic retrieval will be migrated in the next step.
-        raise NotImplementedError(
-            f"AskService route not migrated yet: {decision['route']}"
-        )
+        raise RuntimeError(f"Unknown question route: {decision['route']}")

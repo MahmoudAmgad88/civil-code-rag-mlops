@@ -7,11 +7,11 @@ from pathlib import Path
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
-
 # --------------------------------------------------
 # 1. Configuration
 # --------------------------------------------------
 
+# Offline index inspection helper; live requests use retrieval.Retriever.
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 INDEX_DIR = PROJECT_ROOT / "data" / "index"

@@ -1,9 +1,8 @@
-"""Unit tests for query routing and legacy compatibility."""
+"""Unit tests for query routing."""
 
 import pytest
 
 from civil_code_rag.core.query_router import route_question
-from scripts.query_router import route_question as legacy_route_question
 
 
 @pytest.mark.parametrize(
@@ -35,7 +34,3 @@ def test_question_routing(
 def test_empty_question_is_rejected() -> None:
     with pytest.raises(ValueError, match="Question must not be empty"):
         route_question("   ")
-
-
-def test_legacy_import_uses_same_function() -> None:
-    assert legacy_route_question is route_question

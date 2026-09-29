@@ -11,12 +11,12 @@ import re
 from collections import Counter
 from pathlib import Path
 
-
 # --------------------------------------------------
 # 1. Project paths and subset settings
 # --------------------------------------------------
 
 # Resolve paths from the script's location, not the terminal's location.
+# Resolve paths relative to the repository, never the caller's working directory.
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 RAW_DIR = PROJECT_ROOT / "data" / "raw_pages" / "pypdf"
 OUTPUT_DIR = PROJECT_ROOT / "data" / "processed"

@@ -5,11 +5,11 @@ from pathlib import Path
 
 from sentence_transformers import SentenceTransformer
 
-
 # --------------------------------------------------
 # 1. Configuration
 # --------------------------------------------------
 
+# Resolve paths relative to the repository, never the caller's working directory.
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 SEARCH_RECORDS_PATH = (

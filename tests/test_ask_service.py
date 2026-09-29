@@ -1,20 +1,19 @@
 """Unit tests for the initial AskService routes."""
 
 import json
+from unittest.mock import Mock
+
 import pytest
 
 from civil_code_rag.repositories.article_repository import ArticleRepository
 from civil_code_rag.services.ask_service import (
     AmbiguousArticleRequestError,
     ArticleNotFoundError,
-    AskService,
-)
-from unittest.mock import Mock
-
-from civil_code_rag.services.ask_service import (
     ArticleTextUnavailableError,
+    AskService,
     CitationValidationError,
 )
+
 
 @pytest.fixture
 def service(tmp_path):

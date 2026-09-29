@@ -4,11 +4,11 @@
 import json
 from pathlib import Path
 
-
 # --------------------------------------------------
 # 1. Project configuration
 # --------------------------------------------------
 
+# Resolve paths relative to the repository, never the caller's working directory.
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 DATA_DIR = PROJECT_ROOT / "data" / "processed"

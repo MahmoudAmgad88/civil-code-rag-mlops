@@ -16,12 +16,12 @@ import json
 import re
 from pathlib import Path
 
-
 # --------------------------------------------------
 # 1. Project configuration
 # --------------------------------------------------
 
 # Locate the project root independently of the terminal.
+# Resolve paths relative to the repository, never the caller's working directory.
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 RAW_DIR = PROJECT_ROOT / "data" / "raw_pages" / "pypdf"

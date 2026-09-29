@@ -1,254 +1,140 @@
-"""Automated tests for the local Civil Code RAG API."""
+"""API contract tests using injected dependencies and no external services."""
 
+from pathlib import Path
+from unittest.mock import Mock
+
+import pytest
 from fastapi.testclient import TestClient
 
-import scripts.api as api
+from civil_code_rag.api.dependencies import get_ask_service
+from civil_code_rag.api.main import app
+from civil_code_rag.repositories.article_repository import ArticleRepository
+from civil_code_rag.services.ask_service import AskService
+
+CORPUS_PATH = Path(__file__).resolve().parents[1] / "data" / "processed" / "articles.jsonl"
 
 
-client = TestClient(api.app)
+@pytest.fixture
+def api():
+    retriever = Mock()
+    generator = Mock()
+    service = AskService(ArticleRepository(CORPUS_PATH), retriever, generator)
+    app.dependency_overrides[get_ask_service] = lambda: service
+    with TestClient(app) as client:
+        yield client, service
+    app.dependency_overrides.clear()
 
 
-def test_health():
-    """The API responds to a health check."""
+def test_health_does_not_resolve_ask_service():
+    def fail_if_resolved():
+        raise AssertionError("Health must not initialize application resources.")
 
-    response = client.get("/health")
-
+    app.dependency_overrides[get_ask_service] = fail_if_resolved
+    try:
+        response = TestClient(app).get("/health")
+    finally:
+        app.dependency_overrides.clear()
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
 
 
-def test_exact_lookup_repealed_article():
-    """Exact lookup returns the source note, not invented article text."""
-
-    response = client.post(
-        "/ask",
-        json={"question": "ما نص المادة ٦٠؟"},
-    )
-
+@pytest.mark.parametrize(
+    ("question", "language", "text_fragment"),
+    [
+        ("ما نص المادة ٩١؟", "ar", "الإرادة"),
+        ("What does Article 91 say?", "en", "declaration of intention"),
+    ],
+)
+def test_exact_lookup_in_both_languages(api, question, language, text_fragment):
+    client, service = api
+    response = client.post("/ask", json={"question": question})
     assert response.status_code == 200
-
     data = response.json()
-
     assert data["route"] == "exact"
-    assert data["language"] == "ar"
-    assert data["article_id"] == "CC-60"
+    assert data["language"] == language
+    assert data["article_id"] == "CC-91"
+    assert text_fragment in data["answer"]
+    assert data["source_note"] is None
+    service.retriever.search.assert_not_called()
+    service.generator.generate.assert_not_called()
+
+
+def test_repealed_article_returns_source_note_without_llm(api):
+    client, service = api
+    response = client.post("/ask", json={"question": "ما نص المادة ٦٠؟"})
+    assert response.status_code == 200
+    data = response.json()
     assert data["answer"] is None
     assert "54-80" in data["source_note"]
     assert data["verified_status"] == "unverified"
+    service.generator.generate.assert_not_called()
 
 
-def test_explicitly_out_of_scope_question():
-    """A clearly unsupported domain is rejected before retrieval."""
-
+def test_out_of_scope_question(api):
+    client, service = api
     response = client.post(
-        "/ask",
-        json={
-            "question": (
-                "ما عقوبة جريمة القتل العمد "
-                "في قانون العقوبات المصري؟"
-            )
-        },
+        "/ask", json={"question": "What does the Egyptian Penal Code say?"}
     )
-
     assert response.status_code == 200
     assert response.json()["route"] == "out_of_scope"
+    service.retriever.search.assert_not_called()
 
 
-def test_semantic_route_without_real_llm(monkeypatch):
-    """Test semantic routing with controlled retrieval and LLM outputs."""
-
-    fake_context = """
-[SOURCE: CC-91]
-PDF pages: 8-9
-Article text:
-ينتج التعبير عن الإرادة أثره في الوقت الذي يتصل فيه بعلم من وجه إليه.
-"""
-
-    fake_answer = (
-        "ينتج التعبير عن الإرادة أثره عند علم من وجه إليه [CC-91]."
-    )
-
-    # Replace the real functions only during this test.
-    def fake_retrieve_evidence(question, language):
-        assert question == "متى ينتج التعبير عن الإرادة أثره القانوني؟"
-        assert language == "ar"
-        return fake_context
-
-    def fake_generate_answer(question, context):
-        assert context == fake_context
-        return fake_answer
-
-    monkeypatch.setattr(
-        api,
-        "retrieve_evidence",
-        fake_retrieve_evidence,
-    )
-
-    monkeypatch.setattr(
-        api,
-        "generate_answer",
-        fake_generate_answer,
-    )
-
-    response = client.post(
-        "/ask",
-        json={
-            "question": "متى ينتج التعبير عن الإرادة أثره القانوني؟"
-        },
-    )
-
+def test_explain_specific_article_without_semantic_retrieval(api):
+    client, service = api
+    service.generator.generate.return_value = "Article explanation [CC-91]."
+    response = client.post("/ask", json={"question": "Explain Article 91"})
     assert response.status_code == 200
-
     data = response.json()
-
-    assert data["route"] == "semantic"
-    assert data["language"] == "ar"
-    assert data["answer"] == fake_answer
     assert data["cited_article_ids"] == ["CC-91"]
+    assert "source_note" not in data
+    assert "verified_status" not in data
+    service.retriever.search.assert_not_called()
 
-def test_show_article_text_without_llm(monkeypatch):
-    """A show_text request must not call the LLM."""
 
-    def fail_if_llm_called(question, context):
-        raise AssertionError(
-            "LLM must not be called for show_text."
-        )
-
-    monkeypatch.setattr(
-        api,
-        "generate_answer",
-        fail_if_llm_called,
-    )
-
+def test_semantic_route_with_controlled_dependencies(api):
+    client, service = api
+    service.retriever.search.return_value = [
+        {"record": {"article_id": "CC-91", "language": "en"}, "similarity": 0.9}
+    ]
+    service.generator.generate.return_value = "The rule applies on notice [CC-91]."
     response = client.post(
-        "/ask",
-        json={"question": "ما نص المادة ٩١؟"},
+        "/ask", json={"question": "When does an expression of intent take effect?"}
     )
-
     assert response.status_code == 200
+    assert response.json()["route"] == "semantic"
+    assert response.json()["cited_article_ids"] == ["CC-91"]
 
-    data = response.json()
 
-    assert data["route"] == "exact"
-    assert data["article_id"] == "CC-91"
-    assert "ينتج التعبير عن الإرادة" in data["answer"]
+@pytest.mark.parametrize(
+    ("question", "status", "detail"),
+    [
+        ("What does Article 200 say?", 404, "Article not found in the available corpus."),
+        (
+            "Article 91",
+            422,
+            "Article request is ambiguous. Ask for the article text or its explanation.",
+        ),
+        ("   ", 422, "Question must not be empty."),
+    ],
+)
+def test_application_error_contracts(api, question, status, detail):
+    client, _ = api
+    response = client.post("/ask", json={"question": question})
+    assert response.status_code == status
+    assert response.json() == {"detail": detail}
 
-def test_explain_specific_article_without_real_llm(monkeypatch):
-    """An explain request must use the specified article as evidence."""
 
-    question = "اشرحلي المادة ٩١ ببساطة."
+def test_empty_question_is_rejected_by_pydantic(api):
+    client, _ = api
+    assert client.post("/ask", json={"question": ""}).status_code == 422
 
-    fake_answer = (
-        "المادة بتوضح إمتى التعبير عن الإرادة "
-        "يبدأ ينتج أثره [CC-91]."
-    )
 
-    def fail_if_semantic_retrieval_called(question, language):
-        raise AssertionError(
-            "Semantic retrieval must not run "
-            "when the article is explicitly specified."
-        )
-
-    def fake_generate_answer(question, context):
-        assert question == "اشرحلي المادة ٩١ ببساطة."
-        assert "[SOURCE: CC-91]" in context
-        assert "ينتج التعبير عن الإرادة" in context
-
-        return fake_answer
-
-    monkeypatch.setattr(
-        api,
-        "retrieve_evidence",
-        fail_if_semantic_retrieval_called,
-    )
-
-    monkeypatch.setattr(
-        api,
-        "generate_answer",
-        fake_generate_answer,
-    )
-
-    response = client.post(
-        "/ask",
-        json={"question": question},
-    )
-
-    assert response.status_code == 200
-
-    data = response.json()
-
-    assert data["route"] == "explain"
-    assert data["intent"] == "explain"
-    assert data["article_id"] == "CC-91"
-    assert data["answer"] == fake_answer
-    assert data["cited_article_ids"] == ["CC-91"]
-
-def test_explain_article_with_source_note_without_llm(monkeypatch):
-    """A source-note-only article must not be explained by the LLM."""
-
-    def fail_if_llm_called(question, context):
-        raise AssertionError(
-            "LLM must not be called when article text is unavailable."
-        )
-
-    monkeypatch.setattr(
-        api,
-        "generate_answer",
-        fail_if_llm_called,
-    )
-
-    response = client.post(
-        "/ask",
-        json={"question": "اشرحلي المادة ٦٠ ببساطة."},
-    )
-
-    assert response.status_code == 200
-
-    data = response.json()
-
-    assert data["route"] == "explain"
-    assert data["article_id"] == "CC-60"
-    assert data["answer"] is None
-
-    assert "غير متاح" in data["message"]
-    assert "54-80" in data["source_note"]
-    assert data["verified_status"] == "unverified"
-    assert data["cited_article_ids"] == []
-
-def test_missing_article_returns_404():
-    """An article absent from our corpus returns 404."""
-
-    response = client.post(
-        "/ask",
-        json={"question": "ما نص المادة ٢٠٠؟"},
-    )
-
-    assert response.status_code == 404
+def test_invalid_citation_returns_502(api):
+    client, service = api
+    service.generator.generate.return_value = "Unsupported claim [CC-200]."
+    response = client.post("/ask", json={"question": "Explain Article 91"})
+    assert response.status_code == 502
     assert response.json() == {
-        "detail": "Article not found in the available corpus."
-    }
-
-
-def test_empty_question_returns_422():
-    """Pydantic rejects an empty question."""
-
-    response = client.post(
-        "/ask",
-        json={"question": ""},
-    )
-
-    assert response.status_code == 422
-
-
-def test_whitespace_question_returns_422():
-    """The endpoint rejects a question containing spaces only."""
-
-    response = client.post(
-        "/ask",
-        json={"question": "   "},
-    )
-
-    assert response.status_code == 422
-    assert response.json() == {
-        "detail": "Question must not be empty."
+        "detail": "Generated answer failed citation validation."
     }
