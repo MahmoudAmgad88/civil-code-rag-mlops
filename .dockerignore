@@ -1,0 +1,30 @@
+# Local development environment
+.git/
+.venv/
+venv/
+**/__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.pyc
+
+# Secrets
+.env
+.env.*
+*.pem
+*.key
+
+# Development-only files
+tests/
+eval/
+pipelines/
+*.zip
+desktop.ini
+
+# Source documents and generated index
+*.pdf
+data/raw_pages/
+data/index/
+
+# Keep only the corpus required for basic API routes
+data/processed/*
+!data/processed/articles.jsonl
