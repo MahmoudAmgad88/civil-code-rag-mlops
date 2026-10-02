@@ -152,7 +152,7 @@ def evaluate(
 if __name__ == "__main__":
     import mlflow
 
-    TOP_K = 3
+    TOP_K = 6
 
     questions = load_semantic_questions(QUESTIONS_PATH)
 
