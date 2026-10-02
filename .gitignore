@@ -32,3 +32,8 @@ outputs/
 # Windows metadata
 desktop.ini
 Thumbs.db
+
+# MLflow local tracking
+mlflow.db
+mlartifacts/
+mlruns/
