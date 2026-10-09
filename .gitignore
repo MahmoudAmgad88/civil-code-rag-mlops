@@ -37,3 +37,7 @@ Thumbs.db
 mlflow.db
 mlartifacts/
 mlruns/
+
+
+# Local DVC remote storage
+DVC-Remote/
