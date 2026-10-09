@@ -1,0 +1,1 @@
+"""Data access components for the Civil Code RAG application."""

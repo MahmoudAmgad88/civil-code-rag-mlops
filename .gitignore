@@ -17,7 +17,7 @@ htmlcov/
 # Source documents and generated data
 *.pdf
 data/raw_pages/
-data/index/
+
 
 # Temporary files and local experiments
 *.zip
@@ -32,3 +32,12 @@ outputs/
 # Windows metadata
 desktop.ini
 Thumbs.db
+
+# MLflow local tracking
+mlflow.db
+mlartifacts/
+mlruns/
+
+
+# Local DVC remote storage
+DVC-Remote/
