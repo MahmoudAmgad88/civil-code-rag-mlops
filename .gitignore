@@ -17,7 +17,7 @@ htmlcov/
 # Source documents and generated data
 *.pdf
 data/raw_pages/
-data/index/
+
 
 # Temporary files and local experiments
 *.zip

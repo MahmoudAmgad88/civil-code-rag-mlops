@@ -27,6 +27,7 @@ embeddings = [
     "torch>=2.14.0",
 ]
 dev = [
+    "dvc>=3.67.1",
     "httpx>=0.28.1",
     "mlflow>=3.16.1",
     "pre-commit>=4.6.2",
