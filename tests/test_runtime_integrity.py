@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import numpy as np
+import pytest
 from fastapi.testclient import TestClient
 
 from civil_code_rag.api.dependencies import get_ask_service
@@ -17,13 +18,32 @@ PROCESSED = ROOT / "data" / "processed"
 
 
 def test_frozen_corpus_and_index_counts_match_manifest():
-    manifest = json.loads((PROCESSED / "corpus_manifest.json").read_text("utf-8"))
-    article_count = sum(1 for line in (PROCESSED / "articles.jsonl").open("r", encoding="utf-8") if line.strip())
-    index_record_count = sum(
+    manifest = json.loads(
+        (PROCESSED / "corpus_manifest.json").read_text("utf-8")
+    )
+
+    article_count = sum(
         1
-        for line in (ROOT / "data" / "index" / "index_records.jsonl").open("r", encoding="utf-8")
+        for line in (PROCESSED / "articles.jsonl").open(
+            "r", encoding="utf-8"
+        )
         if line.strip()
     )
+
+    index_records_path = ROOT / "data" / "index" / "index_records.jsonl"
+
+    if not index_records_path.exists():
+        pytest.skip(
+            "DVC-managed retrieval index is not available. "
+            "Run 'dvc pull' before running full artifact integrity tests."
+        )
+
+    index_record_count = sum(
+        1
+        for line in index_records_path.open("r", encoding="utf-8")
+        if line.strip()
+    )
+
     embeddings = np.load(ROOT / "data" / "index" / "embeddings.npy", allow_pickle=False)
 
     assert manifest["record_count"] == article_count == 162
