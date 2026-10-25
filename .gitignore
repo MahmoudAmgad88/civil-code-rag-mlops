@@ -41,3 +41,8 @@ mlruns/
 
 # Local DVC remote storage
 DVC-Remote/
+
+# Release validation scratch data
+.pytest_tmp*/
+.uv-cache/
+!artifacts/retrieval-index.zip

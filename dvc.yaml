@@ -1,0 +1,15 @@
+stages:
+  restore_release_index:
+    cmd: python -m civil_code_rag.release_artifact --report outputs/index-validation.json
+    deps:
+      - artifacts/retrieval-index.zip
+      - artifacts/retrieval-index.json
+      - data/processed/articles.jsonl
+      - data/processed/search_records.jsonl
+      - src/civil_code_rag/release_artifact.py
+      - src/civil_code_rag/config.py
+      - uv.lock
+    outs:
+      - outputs/index-validation.json:
+          cache: false
+    always_changed: true

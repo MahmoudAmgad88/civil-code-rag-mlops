@@ -1,4 +1,3 @@
-
 """Retrieve the most relevant Civil Code articles by semantic similarity."""
 
 import json
@@ -6,6 +5,8 @@ from pathlib import Path
 
 import numpy as np
 from sentence_transformers import SentenceTransformer
+
+from civil_code_rag.release_artifact import MODEL_NAME, MODEL_REVISION
 
 # --------------------------------------------------
 # 1. Configuration
@@ -19,12 +20,11 @@ INDEX_DIR = PROJECT_ROOT / "data" / "index"
 EMBEDDINGS_PATH = INDEX_DIR / "embeddings.npy"
 INDEX_RECORDS_PATH = INDEX_DIR / "index_records.jsonl"
 
-MODEL_NAME = "intfloat/multilingual-e5-small"
-
 
 # --------------------------------------------------
 # 2. Load the saved index
 # --------------------------------------------------
+
 
 def load_index():
     """Load vectors and their associated records."""
@@ -37,18 +37,11 @@ def load_index():
     with INDEX_RECORDS_PATH.open(
         encoding="utf-8",
     ) as file:
-
-        records = [
-            json.loads(line)
-            for line in file
-            if line.strip()
-        ]
+        records = [json.loads(line) for line in file if line.strip()]
 
     # Row i in embeddings must correspond to record i.
     if len(embeddings) != len(records):
-        raise ValueError(
-            "Embedding and record counts do not match."
-        )
+        raise ValueError("Embedding and record counts do not match.")
 
     if embeddings.ndim != 2:
         raise ValueError("Expected a 2D embedding matrix.")
@@ -62,6 +55,7 @@ def load_index():
 # --------------------------------------------------
 # 3. Search articles
 # --------------------------------------------------
+
 
 def search_articles(
     question,
@@ -81,9 +75,7 @@ def search_articles(
 
     # Keep Arabic and English retrieval separate.
     matching_indices = [
-        index
-        for index, record in enumerate(records)
-        if record["language"] == language
+        index for index, record in enumerate(records) if record["language"] == language
     ]
 
     if not matching_indices:
@@ -100,9 +92,7 @@ def search_articles(
 
     # Check that query and document vectors have matching dimensions.
     if query_embedding.shape[0] != embeddings.shape[1]:
-        raise ValueError(
-            "Query and document embedding dimensions do not match."
-        )
+        raise ValueError("Query and document embedding dimensions do not match.")
 
     # Select only the vectors matching the question's language.
     language_embeddings = embeddings[matching_indices]
@@ -116,7 +106,6 @@ def search_articles(
     results = []
 
     for position in ranked_positions:
-
         # Convert the language-specific position back to
         # the corresponding position in the full index.
         original_index = matching_indices[int(position)]
@@ -136,19 +125,18 @@ def search_articles(
 # --------------------------------------------------
 
 if __name__ == "__main__":
-
     embeddings, records = load_index()
 
     print(f"Loaded records: {len(records)}")
     print(f"Loaded embeddings: {embeddings.shape}")
 
-    model = SentenceTransformer(MODEL_NAME)
+    model = SentenceTransformer(MODEL_NAME, revision=MODEL_REVISION, device="cpu")
 
     # Two questions from our development evaluation dataset.
     test_questions = [
         {
             "language": "ar",
-            "question": "متى ينتج التعبير عن الإرادة أثره القانوني؟",
+            "question": "Ù…ØªÙ‰ ÙŠÙ†ØªØ¬ Ø§Ù„ØªØ¹Ø¨ÙŠØ± Ø¹Ù† Ø§Ù„Ø¥Ø±Ø§Ø¯Ø© Ø£Ø«Ø±Ù‡ Ø§Ù„Ù‚Ø§Ù†ÙˆÙ†ÙŠØŸ",
             "expected_article_id": "CC-91",
         },
         {
@@ -159,7 +147,6 @@ if __name__ == "__main__":
     ]
 
     for test in test_questions:
-
         results = search_articles(
             question=test["question"],
             language=test["language"],
@@ -176,7 +163,6 @@ if __name__ == "__main__":
         print("=" * 50)
 
         for rank, result in enumerate(results, start=1):
-
             record = result["record"]
 
             print(
@@ -186,21 +172,13 @@ if __name__ == "__main__":
             )
 
             # Display a short preview of the retrieved article.
-            preview = " ".join(
-                record["text_display"].split()
-            )[:180]
+            preview = " ".join(record["text_display"].split())[:180]
 
             print(f"Text: {preview}...")
 
         # This checks retrieval, not answer correctness.
-        retrieved_article_ids = {
-            result["record"]["article_id"]
-            for result in results
-        }
+        retrieved_article_ids = {result["record"]["article_id"] for result in results}
 
-        found = (
-            test["expected_article_id"]
-            in retrieved_article_ids
-        )
+        found = test["expected_article_id"] in retrieved_article_ids
 
         print(f"\nExpected article found in Top 5: {found}")

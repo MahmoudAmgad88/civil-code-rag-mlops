@@ -18,6 +18,7 @@ tests/
 eval/
 pipelines/
 *.zip
+!artifacts/retrieval-index.zip
 desktop.ini
 
 # Source documents and generated index
@@ -28,3 +29,12 @@ data/index/
 # Keep only the corpus required for basic API routes
 data/processed/*
 !data/processed/articles.jsonl
+!data/processed/search_records.jsonl
+.dvc/
+DVC-Remote/
+mlruns/
+mlartifacts/
+mlflow.db
+outputs/
+.pytest_tmp*/
+.uv-cache/
