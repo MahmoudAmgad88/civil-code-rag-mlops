@@ -1,883 +1,161 @@
-# Egyptian Civil Code RAG — MLOps Practice Project
+# Egyptian Civil Code RAG
 
-A bilingual Arabic/English Retrieval-Augmented Generation (RAG) MVP built over a frozen subset of the Egyptian Civil Code.
+Bilingual Arabic/English FastAPI RAG over a frozen educational subset: Articles 1-160, two promulgation records, 162 corpus records and 268 language-specific search records. Exact lookup, article explanation, semantic retrieval, citation validation and source-note handling are implemented.
 
-The main goal of this repository is **MLOps practice**: showing how an ML/GenAI application moves from a local prototype toward a system that is structured, reproducible, tested, versioned, containerized, experiment-tracked, and automatically validated in CI.
+Educational use only. The corpus covers PDF pages 1-18 of 170; transcription and current legal status are unverified. Articles 54-80 have a source note rather than original text. This is not legal advice.
 
-> **Legal disclaimer:** This is an educational project, not legal advice. The corpus is incomplete and does not establish current legal status, authoritative transcription, or complete coverage of Egyptian law.
+## Clean-machine startup
 
----
+Prerequisites: Git, an internet connection, Docker Engine/Desktop running in Linux-container mode, and Docker Compose with `--wait` support. The primary target is Linux x86_64; Windows uses Docker Desktop/WSL2. macOS Linux-container execution has not been validated. CPU only; no GPU, CUDA, AWS, Qdrant or Langfuse account is required. Allow disk space for the Python/PyTorch image and the multilingual model cache; first-download time and peak RAM depend on the machine and have not been benchmarked.
 
-## 1. What This Project Demonstrates
+Clone `https://github.com/MahmoudAmgad88/civil-code-rag-mlops.git`, select the release branch/commit supplied with the submission, and enter its directory. From that directory, the three primary commands are:
 
-```text
-Code
-  ↓
-Reproducible Environment
-  ↓
-Testing + Code Quality
-  ↓
-Data / Artifact Versioning
-  ↓
-Experiment Tracking
-  ↓
-Model Registry Practice
-  ↓
-API Serving
-  ↓
-Containerization
-  ↓
-Continuous Integration
-  ↓
-Repeatable Delivery
-```
-
-The application supports:
-
-- Arabic and English questions
-- Exact article lookup
-- Explanation of a named article
-- Semantic retrieval
-- Grounded LLM answers
-- Citation validation
-- Out-of-scope rejection
-- Repealed-article source-note handling
-- Language-isolated retrieval
-
-The goal is not to maximize RAG quality at this stage. The goal is to understand how an ML/GenAI system moves toward reliable production operation.
-
----
-
-## 2. Frozen MVP Scope
-
-| Item | Value |
-|---|---:|
-| Civil Code articles | 160 |
-| Additional promulgation records | 2 |
-| Total corpus records | 162 |
-| Retrieval/search records | 268 |
-| Languages | Arabic + English |
-| Repealed range represented by source note | Articles 54–80 |
-| Current PDF coverage | Pages 1–18 of 170 |
-| Embedding dimension | 384 |
-
-The corpus manifest stores lineage and integrity metadata such as record counts, article coverage, languages, parser version, repealed ranges, and source hashes.
-
-The complete 170-page extraction is intentionally outside the current MLOps scope.
-
----
-
-## 3. Application Architecture
-
-```mermaid
-flowchart TD
-    U[User] --> API[FastAPI]
-    API --> S[AskService]
-    S --> R[Question Router]
-
-    R --> E[Exact / Explain]
-    R --> O[Out of Scope]
-    R --> M[Semantic]
-
-    E --> AR[ArticleRepository]
-    M --> RET[Semantic Retriever]
-    RET --> IDX[Embedding Index]
-    RET --> CB[Context Builder]
-    CB --> GEN[Answer Generator]
-    GEN --> CV[Citation Validation]
-
-    AR --> RESP[Response]
-    O --> RESP
-    CV --> RESP
-```
-
-Package responsibilities:
-
-- `core/` — routing, language detection, scope rules, citation rules
-- `repositories/` — frozen corpus access
-- `retrieval/` — semantic search and context construction
-- `generation/` — OpenAI request handling
-- `services/` — business logic through `AskService`
-- `api/` — FastAPI routes, validation, schemas, lifecycle, and error mapping
-- `pipelines/` — offline parsing, corpus, index, manifest, and evaluation workflows
-- `tests/` — unit, API, integration, regression, and integrity coverage
-
-### Lazy heavy-resource initialization
-
-The embedding model, retrieval index, and OpenAI client initialize only when required.
-
-Therefore these paths do not require model loading or an OpenAI key:
-
-- application import
-- `/health`
-- exact article lookup
-- out-of-scope rejection
-- repealed-article source-note responses
-
----
-
-## 4. Project Structure
-
-```text
-civil-code-rag-mlops/
-│
-├── .dvc/
-├── .github/
-│   └── workflows/
-│       └── ci.yml
-├── data/
-│   ├── processed/
-│   ├── index/                  # DVC-managed
-│   └── index.dvc
-├── eval/
-├── pipelines/
-├── src/
-│   └── civil_code_rag/
-│       ├── api/
-│       ├── core/
-│       ├── generation/
-│       ├── repositories/
-│       ├── retrieval/
-│       ├── services/
-│       └── config.py
-├── tests/
-├── .dockerignore
-├── .gitignore
-├── Dockerfile
-├── pyproject.toml
-├── uv.lock
-└── README.md
-```
-
----
-
-## 5. Technology Stack
-
-### Application
-- Python 3.12
-- FastAPI
-- Pydantic
-- OpenAI Responses API
-- Sentence Transformers
-- PyTorch CPU
-- NumPy
-
-### MLOps / Engineering
-- `uv` — dependency and environment management
-- Git / GitHub — source-code versioning
-- `pytest` — automated testing
-- Ruff — linting and code quality
-- Docker — application packaging
-- Docker Hub — container registry practice
-- DVC — retrieval-index artifact versioning
-- MLflow — experiment tracking and Model Registry practice
-- GitHub Actions — Continuous Integration
-
----
-
-## 6. Local Setup
-
-Clone:
-
-```bash
-git clone https://github.com/MahmoudAmgad88/civil-code-rag-mlops.git
-cd civil-code-rag-mlops
-```
-
-Install the base environment:
-
-```bash
-uv sync --locked
-```
-
-Install development and embedding dependencies:
-
-```bash
-uv sync --locked --extra dev --extra embeddings
-```
-
-Why the lockfile matters:
-
-```text
-pyproject.toml → dependency declaration
-uv.lock        → exact resolved versions
-uv sync --locked → reproducible environment
-```
-
----
-
-## 7. Configuration and Secrets
-
-Semantic/explanation routes that generate text require:
-
-```text
-OPENAI_API_KEY
-```
-
-PowerShell:
-
-```powershell
-$env:OPENAI_API_KEY="your-key"
-```
-
-Secrets must be injected at runtime and never committed.
-
-Supported configuration includes:
-
-- `CIVIL_CODE_RAG_CORPUS_PATH`
-- `CIVIL_CODE_RAG_INDEX_DIR`
-- `CIVIL_CODE_RAG_EMBEDDING_MODEL`
-- `CIVIL_CODE_RAG_LLM_MODEL`
-
-OpenAI generation uses `store=False`.
-
-Production deployment should use a managed secret store rather than developer environment variables alone.
-
----
-
-## 8. Run the API
-
-```bash
-uv run --extra embeddings uvicorn civil_code_rag.api.main:app --host 127.0.0.1 --port 8000
-```
-
-Health:
-
-```bash
+```sh
+cp .env.example .env
+docker compose up --build -d --wait --wait-timeout 180
 curl http://127.0.0.1:8000/health
 ```
 
-Exact article example:
+`cp` also works in PowerShell. Use `curl.exe` in Windows PowerShell if `curl` is an alias. If `.env` already exists, keep it instead of replacing it. Before startup, optionally put an evaluator-provided `OPENAI_API_KEY` in `.env` to enable generated answers. Leaving it blank enables no-key review.
 
-```bash
-curl -X POST http://127.0.0.1:8000/ask   -H "Content-Type: application/json"   -d '{"question":"What does Article 91 say?"}'
+Expected health response:
+
+```json
+{"status":"ok","indexed_document_count":268,"corpus_record_count":162}
 ```
 
-| Question type | Behavior | Embedding? | OpenAI? |
-|---|---|---:|---:|
-| Health | health check | No | No |
-| Exact article | direct corpus lookup | No | No |
-| Repealed article | source note | No | No |
-| Explicit out of scope | reject | No | No |
-| Explain named article | article + generation | No semantic retrieval | Yes |
-| Semantic question | retrieve + context + generate | Yes | Yes |
+The image restores and validates the versioned index during build. There is no developer index mount or DVC remote prerequisite. Health checks inspect the corpus/index but never download a model or contact OpenAI. The first semantic request downloads the pinned Hugging Face model into a new named cache volume. Expect that request to be slower; download duration has not been measured. Package/image downloads need internet during build. After setup, health and exact lookup work offline; generation needs internet and OpenAI access.
 
----
+Only API port 8000 is published, bound to `127.0.0.1`. Optional MLflow uses port 5000.
 
-## 9. Testing Strategy
+## Runtime configuration
 
-The project uses multiple testing levels:
+| Variable | Default / requirement |
+|---|---|
+| `OPENAI_API_KEY` | Blank is allowed; required for generated answers. Standard OpenAI key supplied by the evaluator. |
+| `CIVIL_CODE_RAG_CORPUS_PATH` | `data/processed/articles.jsonl` locally |
+| `CIVIL_CODE_RAG_INDEX_DIR` | `data/index` locally |
+| `CIVIL_CODE_RAG_EMBEDDING_MODEL` | `intfloat/multilingual-e5-small` |
+| `CIVIL_CODE_RAG_LLM_MODEL` | `gpt-4.1-mini`; key must have access to this model |
 
-```text
-Unit Tests
-  ↓
-API / Contract Tests
-  ↓
-Integration Tests
-  ↓
-Runtime Integrity Tests
-  ↓
-Manual E2E Smoke Test
+Local Python reads `.env`; process environment values take priority. Compose reads `.env` and sets the two data paths to their absolute container locations. Keep keys out of Git; `.env` is ignored and excluded from the Docker build context. Do not paste `docker compose config` output when using a real key; use `config --quiet` for validation.
+
+The release index is tied to embedding revision `614241f622f53c4eeff9890bdc4f31cfecc418b3`. Serving rejects another embedding model to prevent incompatible retrieval. A different model requires a separately rebuilt, evaluated and versioned index and an intentional serving configuration change.
+
+## API examples and contract
+
+Interactive schemas: `http://127.0.0.1:8000/docs`.
+
+```sh
+curl -X POST http://127.0.0.1:8000/ask -H "Content-Type: application/json" -d '{"question":"What does Article 91 say?"}'
+curl -X POST http://127.0.0.1:8000/ask -H "Content-Type: application/json" -d '{"question":"ما نص المادة ٩١؟"}'
+curl -X POST http://127.0.0.1:8000/ask -H "Content-Type: application/json" -d '{"question":"Explain Article 91"}'
+curl -X POST http://127.0.0.1:8000/ask -H "Content-Type: application/json" -d '{"question":"When does an expression of intent take effect?"}'
 ```
 
-Run all tests:
-
-```bash
-uv run --extra dev --extra embeddings python -m pytest tests -q
-```
-
-Run Ruff:
-
-```bash
-uv run --extra dev ruff check .
-```
-
-### Current integration coverage
-
-`test_api.py` exercises:
-
-```text
-HTTP Request
-→ FastAPI
-→ AskService
-→ Real ArticleRepository
-→ Frozen Corpus
-```
-
-while expensive/external dependencies are controlled with mocks where appropriate.
-
-`test_context_builder_integration.py` exercises:
-
-```text
-Real Corpus
-→ ArticleRepository
-→ Context Builder
-```
-
-`test_answer_generator_integration.py` validates the OpenAI request contract using a fake client, so no network call is required.
-
-### Manual E2E smoke path
-
-```text
-FastAPI
-→ Retriever
-→ Embedding Model
-→ DVC-managed Index
-→ Context Builder
-→ OpenAI
-→ Citation Validation
-→ Final Response
-```
-
-This gives a practical distinction:
-
-- **Unit test** — one isolated component
-- **Integration test** — multiple real components working together
-- **E2E test** — the complete user path including runtime/external dependencies
-
----
-
-## 10. Offline Data and Index Pipelines
-
-Run from the repository root when intentionally rebuilding artifacts:
-
-```bash
-uv run python -m pipelines.parse_arabic
-uv run python -m pipelines.parse_english
-uv run python -m pipelines.pair_articles
-uv run python -m pipelines.validate_corpus
-uv run python -m pipelines.build_search_records
-uv run --extra embeddings python -m pipelines.check_token_lengths
-uv run --extra embeddings python -m pipelines.build_embedding_index
-uv run python -m pipelines.build_manifest
-uv run --extra embeddings python -m pipelines.evaluate_retrieval
-```
-
-Do not rebuild the frozen corpus or index casually.
-
-A data or embedding change should be treated as a versioned MLOps change: rebuild → validate → evaluate → version.
-
----
-
-## 11. DVC — Artifact Versioning
-
-Git is used for code and small metadata. DVC is used for the generated retrieval index.
-
-```text
-Git
-  └── data/index.dvc
-        ↓
-      hash / metadata
-
-DVC Cache
-  └── actual index artifact
-        ↓
-      dvc push
-
-DVC Remote
-  └── artifact storage
-```
-
-Useful commands:
-
-```bash
-dvc status
-dvc add data/index
-dvc push
-dvc pull
-```
-
-### Local DVC remote used for practice
-
-A local filesystem remote was configured to practice the full DVC lifecycle without introducing cloud credentials.
-
-The workflow was verified end to end:
-
-```text
-dvc add
-→ DVC cache
-→ dvc push
-→ local DVC remote
-→ remove local working copy/cache for restore test
-→ dvc pull
-→ artifact restored
-```
-
-The local remote is intentionally excluded from Git.
-
-### Current limitation
-
-GitHub Actions cannot access a DVC remote stored on the developer's machine.
-
-Therefore CI receives:
-
-```text
-source code             ✅
-data/index.dvc metadata ✅
-local DVC artifact      ❌
-```
-
-Artifact-dependent integrity tests skip when the actual index is unavailable.
-
-A production next step would be S3, GCS, Azure Blob Storage, or another shared DVC remote, enabling `dvc pull` inside CI.
-
----
-
-## 12. MLflow — Experiment Tracking
-
-MLflow tracks retrieval evaluation experiments.
-
-Start MLflow:
-
-```bash
-uv run --extra dev mlflow server --host 127.0.0.1 --port 5000
-```
-
-Run retrieval evaluation:
-
-```bash
-uv run --extra dev --extra embeddings python -m pipelines.evaluate_retrieval
-```
-
-Tracked information includes:
-
-**Parameters**
-- `top_k`
-- embedding model
-- evaluation dataset
-- question count
-
-**Metrics**
-- Recall@K
-- Mean Reciprocal Rank (MRR)
-- mean retrieval latency
-
-**Reproducibility metadata**
-- Git commit
-- Git dirty status
-
-**Artifacts**
-- evaluation summary JSON
-
-The important lesson is that an experiment should connect:
-
-```text
-Parameters + Metrics + Artifacts + Source-Code State
-```
-
----
-
-## 13. MLflow Model Registry Practice
-
-The embedding model was registered in MLflow to practice model lifecycle concepts:
-
-```text
-Register
-→ Version
-→ Champion
-→ Challenger
-→ Promote
-→ Rollback
-```
-
-The project used the same embedding model during part of this workflow because the goal was to practice lifecycle mechanics.
-
-The concept is:
-
-```text
-Versioned model/artifact
-→ explicit approved version
-→ controlled promotion
-→ reversible rollback
-```
-
----
-
-## 14. Docker — Reproducible Packaging
-
-Build:
-
-```bash
-docker build -t civil-code-rag:local .
-```
-
-The project is CPU-only.
-
-### Docker optimization lesson
-
-An early image reached approximately **18.5 GB** because PyTorch resolved CUDA/NVIDIA dependencies that were unnecessary for this workload.
-
-The dependency configuration was changed to CPU-only PyTorch and the build was improved with cache-aware installation.
-
-The resulting development image was reduced to approximately **1.8 GB**.
-
-The exact size can vary, but the engineering lesson is:
-
-```text
-CPU workload
-→ CPU-only dependencies
-→ smaller image
-→ faster transfer/startup
-→ lower storage overhead
-```
-
-### Runtime separation
-
-The retrieval index is mounted instead of baked into the image, and the Hugging Face cache can live in a Docker volume.
-
-PowerShell example:
+On Windows PowerShell, use `Invoke-RestMethod` with a UTF-8 body to avoid native-command quoting/encoding differences:
 
 ```powershell
-$indexPath = (Resolve-Path .\data\index).Path
-
-docker run --rm `
-  -p 127.0.0.1:8000:8000 `
-  --mount "type=bind,source=$indexPath,target=/app/data/index,readonly" `
-  --mount "type=volume,source=civil-code-rag-hf-cache,target=/root/.cache/huggingface" `
-  --env OPENAI_API_KEY `
-  -e HF_HOME=/root/.cache/huggingface `
-  civil-code-rag:local
+$body = [Text.Encoding]::UTF8.GetBytes('{"question":"ما نص المادة ٩١؟"}')
+Invoke-RestMethod http://127.0.0.1:8000/ask -Method Post -ContentType 'application/json; charset=utf-8' -Body $body
 ```
 
-The runtime becomes:
+Exact-response fields (answer shortened here):
 
-```text
-Application Image
-+ Versioned Index Artifact
-+ Runtime Secret
-+ Persistent Model Cache
+```json
+{"route":"exact","language":"en","article_id":"CC-91","cited_article_ids":["CC-91"],"answer":"A declaration of intention ...","source_note":null,"verified_status":"unverified","pdf_pages":[8,9]}
 ```
 
-A Docker Hub push was also performed to practice the container-registry workflow.
+This is a schema illustration, not a complete verbatim article. Page metadata comes from the frozen corpus. Exact responses retain the original fields and add `cited_article_ids`. Explanations and semantic responses already expose that citation list. A repealed exact lookup returns `answer: null`, the source note, and an empty citation list; generated explanations of those records also return the source note without calling OpenAI.
 
----
-
-## 15. Continuous Integration — GitHub Actions
-
-GitHub Actions provides an automated quality gate:
-
-```mermaid
-flowchart LR
-    DEV[Developer Change] --> PUSH[Push / Pull Request]
-    PUSH --> CI[GitHub Actions]
-    CI --> ENV[Clean Ubuntu Runner]
-    ENV --> DEP[Install Locked Dependencies]
-    DEP --> RUFF[Ruff]
-    RUFF --> TEST[pytest]
-    TEST -->|Pass| OK[Green CI]
-    TEST -->|Fail| FAIL[Investigate]
-```
-
-Typical stages:
-
-```text
-Checkout
-→ Install Python / uv
-→ Install dependencies
-→ Ruff
-→ pytest
-```
-
-### Why CI does not use a live OpenAI key
-
-Normal automated tests use fakes/mocks and avoid real OpenAI calls.
-
-That keeps CI:
-
-- deterministic
-- faster
-- cheaper
-- independent of external API availability
-- safer because normal CI does not require an LLM secret
-
-### Why one artifact test can be skipped
-
-The current DVC remote is local-only, so the GitHub runner cannot restore the index.
-
-With a cloud DVC remote, a future workflow could become:
-
-```text
-Checkout
-→ dvc pull
-→ Ruff
-→ pytest
-→ full artifact integrity validation
-```
-
----
-
-## 16. Git Delivery Workflow
-
-Development is performed on a feature branch and delivered through a pull request:
-
-```text
-feature/day1-package-refactor
-→ Push
-→ Pull Request
-→ GitHub Actions
-→ Green Checks
-→ Merge to main
-→ Release Tag
-```
-
-Recommended release tag:
-
-```bash
-git tag -a v1.0.0 -m "Civil Code RAG MLOps MVP v1.0.0"
-git push origin v1.0.0
-```
-
-This creates an identifiable release point instead of relying only on the latest commit.
-
----
-
-## 17. Reproducibility Strategy
-
-Reproducibility is provided by several layers, not one tool.
-
-| Concern | Mechanism |
-|---|---|
-| Source code | Git commit |
-| Python dependencies | `pyproject.toml` + `uv.lock` |
-| Corpus lineage | corpus manifest |
-| Data integrity | hashes + validation |
-| Retrieval index | DVC |
-| Experiments | MLflow |
-| Experiment source state | Git commit logged in MLflow |
-| Runtime packaging | Docker |
-| Automated validation | GitHub Actions |
-| Release identity | Git tag |
-
-Core principle:
-
-> A result is only useful if we can identify which code, data, configuration, dependencies, and artifact versions produced it.
-
----
-
-## 18. Security and Reliability Practices
-
-Current practices:
-
-- runtime secret injection
-- no hard-coded OpenAI key
-- secrets excluded from Git
-- OpenAI `store=False`
-- Pydantic request validation
-- citation validation
-- explicit out-of-scope handling
-- health endpoint
-- read-only Docker index mount
-- dependency locking
-- frozen corpus validation
-- external services mocked during deterministic CI tests
-
-Production improvements:
-
-- managed secret storage
-- authentication / authorization
-- rate limiting
-- audit logging
-- image vulnerability scanning
-- dependency/security scanning
-- stronger legal-data governance
-
----
-
-## 19. MLOps Concepts Practiced
-
-| Concept | Implementation | Status |
+| Request | Key/model needed | Behavior |
 |---|---|---|
-| Reproducible environment | `uv`, `pyproject.toml`, `uv.lock` | ✅ Practiced |
-| Source versioning | Git / GitHub | ✅ Practiced |
-| Package/OOP structure | service/repository/retrieval/generation layers | ✅ Practiced |
-| Input validation | Pydantic | ✅ Practiced |
-| Model serving | FastAPI | ✅ Practiced |
-| Unit testing | pytest | ✅ Practiced |
-| Integration testing | FastAPI + services + real corpus | ✅ Practiced |
-| Code quality | Ruff | ✅ Practiced |
-| Artifact versioning | DVC | ✅ Practiced |
-| Artifact restore | local DVC remote + push/pull | ✅ Practiced |
-| Experiment tracking | MLflow | ✅ Practiced |
-| Model Registry | MLflow | ✅ Practiced |
-| Containerization | Docker | ✅ Practiced |
-| CPU image optimization | CPU-only PyTorch | ✅ Practiced |
-| Container registry | Docker Hub | ✅ Practiced |
-| Continuous Integration | GitHub Actions | ✅ Practiced |
-| Runtime secrets | environment injection | ✅ Practiced |
-| Manual E2E validation | Dockerized semantic path | ✅ Practiced |
+| Health | Neither | 200 + data counts; 503 if local data is unavailable/invalid |
+| Exact article in Arabic/English | Neither | Original corpus text or source note |
+| Explicit out-of-scope request | Neither | Rejection response |
+| Empty/whitespace question | Neither | HTTP 422 |
+| Article outside corpus | Neither | HTTP 404 |
+| Explain available original text | OpenAI key | Grounded generation, validated citations |
+| Semantic question | OpenAI key + CPU embedding model | Language-isolated retrieval and grounded generation |
 
----
+Without a key, LLM-dependent routes return HTTP 503 with `{"detail":"OPENAI_API_KEY is required for generated answers."}` before model loading. OpenAI failures return a sanitized 503; invalid generated citations return 502. API routes use synchronous handlers, so FastAPI runs blocking model/HTTP work in its thread pool. This MVP is not tuned for concurrent production traffic.
 
-## 20. Key Engineering Lessons
+## Local Python setup and tests
 
-### Git and DVC solve different problems
+Install Python 3.12 and uv 0.11.7. Path handling supports Windows/Linux; the existing Python 3.12.9 environment passed tests. A fresh Windows Python 3.12.13 pytest run hit an OpenSSL runtime error, so Docker is the validated clean-machine path. From the checkout, after copying `.env.example` as above:
 
-```text
-Git → code and small metadata
-DVC → generated ML/data artifacts
+```sh
+uv sync --locked --extra dev --extra embeddings --python 3.12
+uv run --locked python -m civil_code_rag.release_artifact
+uv run --locked uvicorn civil_code_rag.api.main:app --host 127.0.0.1 --port 8000
 ```
 
-### Experiment tracking is more than saving a score
+No key is required for deterministic checks:
 
-```text
-Parameters + Metrics + Artifacts + Git State
+```sh
+uv run --locked ruff check .
+uv run --locked python -m pipelines.validate_corpus
+uv run --locked python -m pytest tests -q
+uv run --locked python -m pipelines.smoke_api --expect-no-key
 ```
 
-### Container size matters
+The last command requires the running no-key API. Omit `--expect-no-key` if using a real key. `--live-generation` makes one paid semantic request and should only be used intentionally. Unit/integration tests mock generation and do not call OpenAI. Model installation is optional for health/exact-only local review: `uv sync --locked --extra dev` is sufficient for those paths and deterministic tests.
 
-Installing GPU libraries in a CPU workload can create huge, unnecessary images.
+## DVC and reproducible release artifacts
 
-### CI should be deterministic
+The chosen distribution is a 415,196-byte Git-tracked archive, `artifacts/retrieval-index.zip`, with SHA-256 checksums, frozen input hashes and model provenance in `artifacts/retrieval-index.json`. This small MVP artifact avoids external storage credentials. The trade-off is Git history growth if many index versions are committed; larger future corpora should use shared artifact storage.
 
-Do not make a live external LLM call the default CI gate. Mock that boundary and test full E2E behavior separately.
-
-### Integration tests are not unit tests
-
-Unit tests validate isolated components. Integration tests validate that real components cooperate correctly.
-
-### Reproducibility is end to end
-
-Dependency locking alone does not version the data, index, experiment, container, or release.
-
----
-
-## 21. Current Limitations / Knowledge Gap Backlog
-
-### Important next steps
-- cloud/shared DVC remote
-- larger RAG evaluation dataset
-- production secret manager
-- automated full E2E environment
-- monitoring and observability
-- retrieval/data drift monitoring
-- production deployment strategy
-
-### Future / advanced topics
-- Kubernetes
-- automated re-indexing / retraining
-- full 170-page Civil Code extraction
-- advanced RAG evaluation
-- security hardening
-- infrastructure as code
-- image vulnerability scanning
-- optional W&B comparison with MLflow
-
----
-
-## 22. How to Explain This Project
-
-A concise interview / knowledge-sharing story:
-
-> I started with a bilingual Egyptian Civil Code RAG MVP. Instead of first optimizing the RAG model, I used it as a stable application to practice MLOps.
->
-> I refactored it into a package with clear API, service, repository, retrieval, and generation layers. I used `uv` and a lockfile for reproducible Python dependencies.
->
-> I added unit, API-contract, integration, regression, and runtime-integrity testing, with Ruff as a code-quality gate. External OpenAI calls are mocked in automated tests so CI stays deterministic.
->
-> The frozen corpus has lineage/integrity metadata, while the embedding index is versioned with DVC. I configured a local DVC remote and practiced the full `add → push → pull → restore` lifecycle.
->
-> I used MLflow to track retrieval experiments such as Recall@K, MRR, latency, parameters, and Git state. I also practiced Model Registry concepts with champion/challenger promotion and rollback.
->
-> I containerized the application with Docker. An early image accidentally included GPU/CUDA dependencies and grew to about 18.5 GB, so I moved to CPU-only PyTorch and reduced it to about 1.8 GB.
->
-> Finally, I added GitHub Actions so pushes and pull requests run code-quality checks and tests on a clean runner. The delivery flow is feature branch → pull request → CI → main → release tag.
->
-> The main production gaps I would address next are cloud artifact storage, stronger evaluation, production secrets, monitoring, and orchestration.
-
-The central learning goal is:
-
-> **How an ML/GenAI application moves from local development toward a reliable production system.**
-
----
-
-## 23. MLOps Lifecycle Mapping
-
-```text
-Data
-  ↓
-Frozen corpus + manifest
-
-Experiment
-  ↓
-Retrieval evaluation
-
-Representation
-  ↓
-Embedding model + embedding index
-
-Tracking
-  ↓
-MLflow
-
-Versioning
-  ↓
-Git + DVC + MLflow Model Registry
-
-Testing
-  ↓
-pytest + integration tests + Ruff
-
-Packaging
-  ↓
-Docker
-
-Serving
-  ↓
-FastAPI
-
-Continuous Integration
-  ↓
-GitHub Actions
-
-Delivery
-  ↓
-Pull Request + main + release tag
-
-Monitoring
-  ↓
-Future work
-
-Drift / Re-indexing / Retraining
-  ↓
-Future work
+```sh
+uv run --locked dvc repro
+uv run --locked dvc status
 ```
 
----
+`dvc.yaml` restores the index from the archive, validates checksums, vector normalization, finite values, source IDs, languages, dimensions and record order, and writes `outputs/index-validation.json`. Dependencies are the archive/manifest, frozen corpus/search records, restoration code/settings and lockfile. The original `data/index.dvc` remains intact; the pipeline does not declare duplicate ownership of its output. Its report has `cache: false` and the stage intentionally runs on every reproduction to check missing/corrupt runtime files. `dvc status` therefore reports `always changed` for that stage; this is expected.
 
-## 24. Final Project Boundary
+No `dvc pull` is needed. The previous local remote in developer-only `.dvc/config.local` is not shared and is not used by this procedure. Restoration refuses to overwrite a different existing index; preserve that index and use `--output` with a new directory for comparison. To test a fresh destination:
 
-Completed scope:
-
-```text
-RAG MVP
-→ Package Refactor
-→ Reproducible Environment
-→ Frozen / Validated Data
-→ Automated Testing
-→ Artifact Versioning
-→ Experiment Tracking
-→ Model Registry Practice
-→ Docker Packaging
-→ Container Registry
-→ CI
-→ Versioned Delivery
+```sh
+uv run --locked python -m civil_code_rag.release_artifact --output outputs/reviewer-index
 ```
 
-Next production phase:
+Git attributes preserve the frozen JSONL CRLF bytes across operating systems so source hashes match. The source PDF is not bundled; reconstructing the original PDF extraction requires that external source and is outside clean-machine startup. The frozen corpus and paired/search records are in Git. To intentionally regenerate vectors rather than restore the exact release bytes, run `uv run --locked python -m pipelines.build_embedding_index` with embedding dependencies installed. CPU numerical differences across library/platform versions may prevent byte-identical regeneration; archive restoration is byte-identical.
 
-```text
-Cloud Artifact Storage
-→ Deployment Platform
-→ Monitoring
-→ Drift Detection
-→ Automated Re-indexing / Retraining
-→ Governance
+## MLflow evidence
+
+Existing evaluation uses `eval/dev_questions.jsonl`, Recall@K, MRR and retrieval latency, with Git revision/dirty status, parameters and summary artifacts logged to MLflow. In one terminal:
+
+```sh
+uv run --locked mlflow server --host 127.0.0.1 --port 5000
 ```
 
----
+In another:
 
-## Author
+```sh
+uv run --locked python -m pipelines.evaluate_retrieval
+```
 
-**Mahmoud ElSalakawy**
+Open `http://127.0.0.1:5000` and select `civil-code-rag-retrieval`. The current script evaluates `top_k=6`. Historical runs/Registry state are local artifacts and are not included in a clone. No five-run comparison, RAGAS scores, quality threshold or Registry promotion is claimed for this release. See the gap report for rubric items requiring further work.
 
-MLOps / Data Science / Generative AI practical learning project.
+## CI and shutdown
+
+GitHub Actions installs locked Python/uv dependencies, runs Ruff, reproduces the index, checks the corpus, runs pytest, builds Docker, and performs no-key Compose/API checks. No API secret or registry push is required. A local passing run is not evidence that the remote workflow passed; inspect the PR checks.
+
+```sh
+docker compose down
+```
+
+This keeps the model cache for future startups. `docker compose down --volumes` also deletes this project's model cache and forces later downloads. Stop local Uvicorn/MLflow with Ctrl+C.
+
+## Troubleshooting
+
+- Docker connection/pipe error: start Docker Desktop or Docker Engine and verify `docker version`. In restricted agent environments Docker may require host access.
+- Port 8000 occupied: stop the other API or change the published host port in Compose and your request URL.
+- Index checksum failure: check out the release files with Git attributes enabled; do not copy text files through tools that rewrite line endings. Keep a custom index separately.
+- HTTP 503 for generation: set a valid `OPENAI_API_KEY` and restart the service; verify model access/quota. Errors intentionally omit private upstream details.
+- Model download failure: allow Hugging Face access and disk space; the first semantic request needs internet. Health/exact lookup remain available.
+- Native Windows `uv sync` fails with `UnknownIssuer`: retry with `uv sync --system-certs --locked --extra dev --extra embeddings --python 3.12` when your organization trusts its certificate through the Windows certificate store. TLS verification remains enabled.
+- Native Windows pytest exits with `OPENSSL_Uplink ... no OPENSSL_Applink`: this occurred with fresh uv Python 3.12.13 on the validation host; use Docker while investigating the local OpenSSL/runtime environment.
+- pytest temporary-directory access errors in a sandbox: run tests in a normal shell or an authorized host context. These are environment errors, not passing tests.
+- DVC complains about a remote: use `dvc repro` for this release; `dvc pull` targets the original developer remote and is not the reviewer path.
+
+Evidence and known limits: [readiness](docs/GRADUATION_READINESS.md), [clean-machine validation](docs/CLEAN_MACHINE_VALIDATION.md), [graduation gaps](docs/GRADUATION_GAPS.md), [release notes](docs/RELEASE_NOTES.md).
