@@ -23,11 +23,11 @@ The starting branch was `docs/peer-review`. User changes were a modified `.gitig
 
 | Requirement | Status | Evidence | Remaining action |
 |---|---|---|---|
-| Dedicated branch and preserved history | PASS | `release/graduation-readiness`; logical commits; original user ignore changes remain unstaged | Review draft PR before merging |
+| Dedicated branch and preserved history | PASS | `release/graduation-readiness`; draft PR #4; logical commits; original user ignore changes remain unstaged | Review draft PR before merging |
 | Required environment variables / no-key behavior | PASS | Five entries in `.env.example`; standard `OPENAI_API_KEY`; actual no-key HTTP checks | Evaluator supplies a valid key for generation |
 | Secret hygiene | PASS (bounded inspection) | `.env` ignored/excluded; tracked-file/history pattern scan found no key candidates; safe summary under `docs/evidence` | Pattern scan is not a complete credential/security audit |
 | API health + counts | PASS | HTTP 200: 268 indexed documents, 162 corpus records; corrupt/missing data tested as 503 | None for frozen release |
-| Empty input / bilingual exact lookup / citations | PASS | 81-test local suite and bilingual HTTP smoke; additive exact citation field | None for frozen contract |
+| Empty input / bilingual exact lookup / citations | PASS | 81-test existing Windows suite, 81-test ephemeral Linux suite and bilingual HTTP smoke; additive exact citation field | None for frozen contract |
 | Missing key / sanitized upstream errors | PASS | Generated routes return 503 before model load; fake upstream failures tested | Validate evaluator key/model permissions |
 | CPU Docker / Compose / non-root execution | PASS | Successful builds, uid 1000, fresh named volume, healthy container and no-key smoke | Other OS/CPU architectures not validated |
 | Checkout-independent index distribution | PASS | 415,196-byte Git archive; checksums; separate clone built without original index or DVC config | Git archive approach should be replaced by shared storage if artifact grows |

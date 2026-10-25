@@ -100,3 +100,23 @@ This exercises the real CPU retriever, local index, context builder, OpenAI gene
 ## Fresh native Windows test limitation
 
 `uv run --locked python -m pytest tests -q` and direct virtualenv pytest invocations exited with code 1 in the fresh Python 3.12.13 environment. Disabling plugin autoload and capture exposed `OPENSSL_Uplink ... no OPENSSL_Applink`. Imports of pytest 9.1.1, NumPy 2.5.3 and FastAPI 0.141.1 succeeded individually. Removing inherited Conda DLL paths did not produce a passing test run. This remains an environment/runtime issue requiring investigation; no clean-native pytest pass is claimed. The existing Python 3.12.9 environment's 81 passing tests and the separate clean-clone Docker HTTP/semantic checks remain valid evidence.
+
+
+## Linux suite and Git delivery
+
+An ephemeral container based on `graduation-clean-checkout-api` mounted the isolated clone's `tests` and corpus manifest read-only, installed locked dev/embedding extras, then ran:
+
+```sh
+uv sync --locked --extra dev --extra embeddings
+.venv/bin/python -m pytest tests -q -p no:cacheprovider
+```
+
+Actual result: **81 passed, one upstream deprecation warning, 3.90 seconds**. The disposable test container was removed automatically. This verifies deterministic tests on the project's primary Linux runtime despite the separate native Windows OpenSSL failure.
+
+Logical commits were made on the release branch and pushed using Windows certificate trust, without force-pushing or updating main:
+
+```sh
+git -c http.sslBackend=schannel push -u origin release/graduation-readiness
+```
+
+Draft pull request: https://github.com/MahmoudAmgad88/civil-code-rag-mlops/pull/4 . It was created through GitHub's API because the connector was unavailable; authentication used Git's existing credential in memory. No merge was performed. Remote CI results must be checked on the final commit; local/container results do not imply a remote pass.

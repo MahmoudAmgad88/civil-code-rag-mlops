@@ -12,6 +12,8 @@ Date: 25 October 2026 (Cairo). Branch: `release/graduation-readiness`.
 - Extended CI with DVC restoration, corpus/index validation, Docker build and bilingual no-key HTTP smoke checks. No registry push was added.
 - Replaced setup documentation with a clean-checkout path, examples, local tests, DVC/MLflow commands, shutdown and troubleshooting.
 
-Deterministic validation: 81 tests passed with one upstream AnyIO/Starlette deprecation warning. See `CLEAN_MACHINE_VALIDATION.md` for exact commands, container evidence, environment failures and any remaining external-service limitations. Advanced rubric gaps are listed separately in `GRADUATION_GAPS.md`.
+Deterministic validation: 81 tests passed in the existing Windows environment and 81 passed in the ephemeral Linux container with one upstream AnyIO/Starlette deprecation warning. See `CLEAN_MACHINE_VALIDATION.md` for exact commands, container evidence, environment failures and any remaining external-service limitations. Advanced rubric gaps are listed separately in `GRADUATION_GAPS.md`.
 
 Existing user edits to `.gitignore` were retained in the working tree and excluded from release commits. The user-created `.env.example` was expanded as requested. No `.env` contents or credentials were committed. No merge or push to main was performed.
+
+Draft PR: https://github.com/MahmoudAmgad88/civil-code-rag-mlops/pull/4 .
