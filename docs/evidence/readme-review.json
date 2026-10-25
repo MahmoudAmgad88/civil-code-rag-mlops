@@ -1,0 +1,372 @@
+{
+  "reviewed_branch": "release/graduation-readiness",
+  "reviewed_commit": "19cdd46f9fd7faf5e571a57456b2fcf3ffa63846",
+  "source_file": "README_merged_study_and_delivery.md",
+  "source_sha256": "f885baa62e8bdba1acea04a17bc5bcb3b7bec0c59bc9771fbec8aeb8d0189c51",
+  "application_code_changed": false,
+  "tools": {
+    "mermaid": "12.2.0",
+    "@mermaid-js/mermaid-cli": "12.0.0",
+    "markdown-it": "15.0.3",
+    "github-slugger": "2.0.0",
+    "markdownlint-cli2": "0.24.0"
+  },
+  "markdown": {
+    "status": "pass",
+    "headings": 57,
+    "sections": 29,
+    "mermaid_diagrams": 5,
+    "links": [
+      {
+        "href": "docs/README_REVIEW_VALIDATION.md",
+        "type": "relative",
+        "status": "pass"
+      },
+      {
+        "href": "#1-start-here--clean-machine-setup",
+        "type": "anchor",
+        "status": "pass"
+      },
+      {
+        "href": "#2-what-this-project-demonstrates",
+        "type": "anchor",
+        "status": "pass"
+      },
+      {
+        "href": "#4-application-architecture",
+        "type": "anchor",
+        "status": "pass"
+      },
+      {
+        "href": "#7-runtime-configuration",
+        "type": "anchor",
+        "status": "pass"
+      },
+      {
+        "href": "#9-local-python-development-and-tests",
+        "type": "anchor",
+        "status": "pass"
+      },
+      {
+        "href": "#12-dvc--artifact-versioning-and-release-reproducibility",
+        "type": "anchor",
+        "status": "pass"
+      },
+      {
+        "href": "#13-mlflow--experiment-tracking",
+        "type": "anchor",
+        "status": "pass"
+      },
+      {
+        "href": "#15-docker--reproducible-packaging",
+        "type": "anchor",
+        "status": "pass"
+      },
+      {
+        "href": "#22-current-limitations--knowledge-gap-backlog",
+        "type": "anchor",
+        "status": "pass"
+      },
+      {
+        "href": "#27-troubleshooting",
+        "type": "anchor",
+        "status": "pass"
+      },
+      {
+        "href": "https://github.com/MahmoudAmgad88/civil-code-rag-mlops/pull/4",
+        "type": "external"
+      },
+      {
+        "href": "docs/GRADUATION_READINESS.md",
+        "type": "relative",
+        "status": "pass"
+      },
+      {
+        "href": "docs/CLEAN_MACHINE_VALIDATION.md",
+        "type": "relative",
+        "status": "pass"
+      },
+      {
+        "href": "docs/GRADUATION_GAPS.md",
+        "type": "relative",
+        "status": "pass"
+      },
+      {
+        "href": "docs/RELEASE_NOTES.md",
+        "type": "relative",
+        "status": "pass"
+      },
+      {
+        "href": "docs/GRADUATION_READINESS.md",
+        "type": "relative",
+        "status": "pass"
+      },
+      {
+        "href": "docs/CLEAN_MACHINE_VALIDATION.md",
+        "type": "relative",
+        "status": "pass"
+      },
+      {
+        "href": "docs/GRADUATION_GAPS.md",
+        "type": "relative",
+        "status": "pass"
+      },
+      {
+        "href": "docs/RELEASE_NOTES.md",
+        "type": "relative",
+        "status": "pass"
+      },
+      {
+        "href": "docs/README_REVIEW_VALIDATION.md",
+        "type": "relative",
+        "status": "pass"
+      }
+    ],
+    "preserved": [
+      "all level-2 sections",
+      "engineering lessons verbatim",
+      "future roadmap verbatim",
+      "interview story verbatim"
+    ]
+  },
+  "commands": {
+    "status": "pass",
+    "runnable_code_blocks": 19,
+    "command_lines": 42,
+    "modules": [
+      "civil_code_rag.release_artifact",
+      "pipelines.build_embedding_index",
+      "pipelines.build_manifest",
+      "pipelines.build_search_records",
+      "pipelines.check_token_lengths",
+      "pipelines.evaluate_retrieval",
+      "pipelines.pair_articles",
+      "pipelines.parse_arabic",
+      "pipelines.parse_english",
+      "pipelines.smoke_api",
+      "pipelines.validate_corpus",
+      "pytest"
+    ],
+    "runtime_environment_names": [
+      "CIVIL_CODE_RAG_CORPUS_PATH",
+      "CIVIL_CODE_RAG_EMBEDDING_MODEL",
+      "CIVIL_CODE_RAG_INDEX_DIR",
+      "CIVIL_CODE_RAG_LLM_MODEL",
+      "OPENAI_API_KEY"
+    ],
+    "requires_python": ">=3.11",
+    "commands": [
+      {
+        "language": "sh",
+        "command": "git clone --branch release/graduation-readiness --single-branch https://github.com/MahmoudAmgad88/civil-code-rag-mlops.git"
+      },
+      {
+        "language": "sh",
+        "command": "cd civil-code-rag-mlops"
+      },
+      {
+        "language": "sh",
+        "command": "cp .env.example .env"
+      },
+      {
+        "language": "sh",
+        "command": "docker compose up --build -d --wait --wait-timeout 180"
+      },
+      {
+        "language": "sh",
+        "command": "curl http://127.0.0.1:8000/health"
+      },
+      {
+        "language": "sh",
+        "command": "curl -X POST http://127.0.0.1:8000/ask -H \"Content-Type: application/json\" -d '{\"question\":\"What does Article 91 say?\"}'"
+      },
+      {
+        "language": "sh",
+        "command": "curl -X POST http://127.0.0.1:8000/ask -H \"Content-Type: application/json\" -d '{\"question\":\"ما نص المادة ٩١؟\"}'"
+      },
+      {
+        "language": "sh",
+        "command": "curl -X POST http://127.0.0.1:8000/ask -H \"Content-Type: application/json\" -d '{\"question\":\"Explain Article 91\"}'"
+      },
+      {
+        "language": "sh",
+        "command": "curl -X POST http://127.0.0.1:8000/ask -H \"Content-Type: application/json\" -d '{\"question\":\"When does an expression of intent take effect?\"}'"
+      },
+      {
+        "language": "powershell",
+        "command": "$body = [Text.Encoding]::UTF8.GetBytes('{\"question\":\"ما نص المادة ٩١؟\"}')"
+      },
+      {
+        "language": "powershell",
+        "command": "Invoke-RestMethod http://127.0.0.1:8000/ask -Method Post -ContentType 'application/json; charset=utf-8' -Body $body"
+      },
+      {
+        "language": "sh",
+        "command": "uv sync --locked --extra dev --extra embeddings --python 3.12"
+      },
+      {
+        "language": "sh",
+        "command": "uv run --locked python -m civil_code_rag.release_artifact"
+      },
+      {
+        "language": "sh",
+        "command": "uv run --locked uvicorn civil_code_rag.api.main:app --host 127.0.0.1 --port 8000"
+      },
+      {
+        "language": "sh",
+        "command": "uv run --locked --extra dev ruff check ."
+      },
+      {
+        "language": "sh",
+        "command": "uv run --locked python -m pipelines.validate_corpus"
+      },
+      {
+        "language": "sh",
+        "command": "uv run --locked --extra dev python -m pytest tests -q"
+      },
+      {
+        "language": "sh",
+        "command": "uv run --locked --extra dev python -m pipelines.smoke_api --expect-no-key"
+      },
+      {
+        "language": "bash",
+        "command": "uv run --locked --extra dev python -m pytest tests -q"
+      },
+      {
+        "language": "bash",
+        "command": "uv run --locked --extra dev ruff check ."
+      },
+      {
+        "language": "bash",
+        "command": "uv run --locked python -m pipelines.parse_arabic"
+      },
+      {
+        "language": "bash",
+        "command": "uv run --locked python -m pipelines.parse_english"
+      },
+      {
+        "language": "bash",
+        "command": "uv run --locked python -m pipelines.pair_articles"
+      },
+      {
+        "language": "bash",
+        "command": "uv run --locked python -m pipelines.validate_corpus"
+      },
+      {
+        "language": "bash",
+        "command": "uv run --locked python -m pipelines.build_search_records"
+      },
+      {
+        "language": "bash",
+        "command": "uv run --locked --extra embeddings python -m pipelines.check_token_lengths"
+      },
+      {
+        "language": "bash",
+        "command": "uv run --locked --extra embeddings python -m pipelines.build_embedding_index"
+      },
+      {
+        "language": "bash",
+        "command": "uv run --locked python -m pipelines.build_manifest"
+      },
+      {
+        "language": "bash",
+        "command": "uv run --locked --extra dev --extra embeddings python -m pipelines.evaluate_retrieval"
+      },
+      {
+        "language": "sh",
+        "command": "uv run --locked --extra dev dvc repro"
+      },
+      {
+        "language": "sh",
+        "command": "uv run --locked --extra dev dvc status"
+      },
+      {
+        "language": "sh",
+        "command": "uv run --locked python -m civil_code_rag.release_artifact --output outputs/reviewer-index"
+      },
+      {
+        "language": "bash",
+        "command": "uv run --locked --extra dev mlflow server --host 127.0.0.1 --port 5000"
+      },
+      {
+        "language": "bash",
+        "command": "uv run --locked --extra dev --extra embeddings python -m pipelines.evaluate_retrieval"
+      },
+      {
+        "language": "sh",
+        "command": "uv run --locked --extra dev mlflow server --host 127.0.0.1 --port 5000"
+      },
+      {
+        "language": "sh",
+        "command": "uv run --locked --extra dev --extra embeddings python -m pipelines.evaluate_retrieval"
+      },
+      {
+        "language": "bash",
+        "command": "docker build -t civil-code-rag:local ."
+      },
+      {
+        "language": "sh",
+        "command": "docker compose up --build -d --wait --wait-timeout 180"
+      },
+      {
+        "language": "sh",
+        "command": "docker compose down"
+      },
+      {
+        "language": "sh",
+        "command": "git tag --list v1.0.0"
+      },
+      {
+        "language": "sh",
+        "command": "git show --no-patch v1.0.0"
+      },
+      {
+        "language": "sh",
+        "command": "docker compose down"
+      }
+    ]
+  },
+  "api_examples": {
+    "status": "pass",
+    "health_example": "exact match",
+    "exact_example": "all fields except explicitly abbreviated answer match",
+    "curl_examples_checked": 4,
+    "empty_input_status": 422,
+    "missing_key_status": 503,
+    "missing_article_status": 404,
+    "repealed_source_note": "pass"
+  },
+  "mermaid": {
+    "diagrams_rendered": 5,
+    "status": "pass",
+    "browser": "headless installed Google Chrome",
+    "artifacts": "outputs/readme-review/diagrams-1.svg through diagrams-5.svg"
+  },
+  "fresh_checkout": {
+    "docker_build": "pass",
+    "compose_healthy": "pass",
+    "health": "268 indexed / 162 corpus",
+    "model_cache_entries_after_no_key_checks": 0,
+    "http_smoke": [
+      "health",
+      "exact_en",
+      "exact_ar",
+      "empty_input_422",
+      "missing_key_503"
+    ],
+    "shutdown": "pass"
+  },
+  "shell_checks": {
+    "english_git_bash_curl": "pass",
+    "arabic_git_bash_windows_curl": "failed: inline encoding; documented limitation",
+    "arabic_powershell_utf8": "pass"
+  },
+  "not_executed": [
+    "source PDF/page extraction and corpus overwrite pipelines",
+    "embedding rebuild",
+    "MLflow evaluation/backend mutation",
+    "tag creation/push",
+    "live paid OpenAI calls",
+    "full pytest rerun for documentation-only change"
+  ]
+}
