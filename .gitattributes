@@ -1,0 +1,3 @@
+# Keep frozen source hashes identical on Windows and Linux.
+data/processed/*.jsonl text eol=crlf
+artifacts/*.zip -text

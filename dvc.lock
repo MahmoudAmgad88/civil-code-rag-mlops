@@ -1,0 +1,39 @@
+schema: '2.0'
+stages:
+  restore_release_index:
+    cmd: python -m civil_code_rag.release_artifact --report 
+      outputs/index-validation.json
+    deps:
+    - path: artifacts/retrieval-index.json
+      hash: md5
+      md5: bbd78e9b07d22db38fd357487df7b578
+      size: 641
+    - path: artifacts/retrieval-index.zip
+      hash: md5
+      md5: 7365d3f0712f0415a02a62578b03bcc2
+      size: 415196
+    - path: data/processed/articles.jsonl
+      hash: md5
+      md5: 67dc46a301ffd09a06d1ab77316339c3
+      size: 137008
+    - path: data/processed/search_records.jsonl
+      hash: md5
+      md5: 660256193f2b8875af908e0b25397a83
+      size: 203269
+    - path: src/civil_code_rag/config.py
+      hash: md5
+      md5: 992f1d29eedfb13fc49c615e7e83bdd7
+      size: 868
+    - path: src/civil_code_rag/release_artifact.py
+      hash: md5
+      md5: 30b05e1b703250ef31fcc98fda9109f7
+      size: 4896
+    - path: uv.lock
+      hash: md5
+      md5: 3ff3f7878a4c967230acce3d9b66c078
+      size: 1107589
+    outs:
+    - path: outputs/index-validation.json
+      hash: md5
+      md5: 321a5b807ed4048ff084eec498e76963
+      size: 89

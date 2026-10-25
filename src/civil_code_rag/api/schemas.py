@@ -13,9 +13,12 @@ class AskRequest(BaseModel):
 
 class HealthResponse(BaseModel):
     status: Literal["ok"]
+    indexed_document_count: int
+    corpus_record_count: int
 
 
 class ExactResponse(BaseModel):
+    cited_article_ids: list[str]
     route: Literal["exact"]
     language: Literal["ar", "en"]
     article_id: str

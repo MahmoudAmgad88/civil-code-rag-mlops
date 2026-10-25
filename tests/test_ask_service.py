@@ -71,6 +71,7 @@ def test_exact_article_text_without_llm(service):
 
     assert result == {
         "route": "exact",
+        "cited_article_ids": ["CC-91"],
         "language": "ar",
         "article_id": "CC-91",
         "answer": "النص العربي للمادة ٩١",

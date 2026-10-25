@@ -1,0 +1,13 @@
+{
+  "archive_sha256": "84a3430e8e895a35cab0cfde49cb728397fe278f21f3cee73914aed952a8b4ec",
+  "files": {
+    "embeddings.npy": "dfd71d4103d9b9c102ebdc2f13f029c122b54376c27eaf661100342bc309f80f",
+    "index_records.jsonl": "936e3427aa2d514e72772f66dbcb1794895f138103ce3eb57f04020314e26b7d"
+  },
+  "corpus_sha256": "6ef3cbe6abebea71f7dfca6b8a2f6c5650ae4c9082b4ec28a4e5b5cc32609ebc",
+  "search_records_sha256": "936e3427aa2d514e72772f66dbcb1794895f138103ce3eb57f04020314e26b7d",
+  "model": "intfloat/multilingual-e5-small",
+  "model_revision": "614241f622f53c4eeff9890bdc4f31cfecc418b3",
+  "record_count": 268,
+  "dimensions": 384
+}

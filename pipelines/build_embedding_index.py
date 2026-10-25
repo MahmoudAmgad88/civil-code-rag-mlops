@@ -1,4 +1,3 @@
-
 """Build and save embeddings for all Civil Code search records."""
 
 import json
@@ -7,6 +6,8 @@ from pathlib import Path
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
+from civil_code_rag.release_artifact import MODEL_NAME, MODEL_REVISION
+
 # --------------------------------------------------
 # 1. Project configuration
 # --------------------------------------------------
@@ -14,21 +15,18 @@ from sentence_transformers import SentenceTransformer
 # Resolve paths relative to the repository, never the caller's working directory.
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-SEARCH_RECORDS_PATH = (
-    PROJECT_ROOT / "data" / "processed" / "search_records.jsonl"
-)
+SEARCH_RECORDS_PATH = PROJECT_ROOT / "data" / "processed" / "search_records.jsonl"
 
 INDEX_DIR = PROJECT_ROOT / "data" / "index"
 
 EMBEDDINGS_PATH = INDEX_DIR / "embeddings.npy"
 INDEX_RECORDS_PATH = INDEX_DIR / "index_records.jsonl"
 
-MODEL_NAME = "intfloat/multilingual-e5-small"
-
 
 # --------------------------------------------------
 # 2. Load search records
 # --------------------------------------------------
+
 
 def load_search_records(file_path):
     """Read search records while preserving their file order."""
@@ -47,13 +45,13 @@ def load_search_records(file_path):
 # 3. Prepare passages
 # --------------------------------------------------
 
+
 def prepare_passages(records, model):
     """Add the E5 passage prefix and reject oversized inputs."""
 
     passages = []
 
     for record in records:
-
         passage = "passage: " + record["text_search"]
 
         # Avoid silently truncating legal article text.
@@ -80,6 +78,7 @@ def prepare_passages(records, model):
 # 4. Generate embeddings
 # --------------------------------------------------
 
+
 def generate_embeddings(passages, model):
     """Generate one normalized embedding per search record."""
 
@@ -98,6 +97,7 @@ def generate_embeddings(passages, model):
 # 5. Save the index
 # --------------------------------------------------
 
+
 def save_index(records, embeddings):
     """Save vectors and their matching records in the same order."""
 
@@ -111,13 +111,13 @@ def save_index(records, embeddings):
         "w",
         encoding="utf-8",
     ) as file:
-
         for record in records:
             file.write(
                 json.dumps(
                     record,
                     ensure_ascii=False,
-                ) + "\n"
+                )
+                + "\n"
             )
 
 
@@ -126,7 +126,6 @@ def save_index(records, embeddings):
 # --------------------------------------------------
 
 if __name__ == "__main__":
-
     records = load_search_records(SEARCH_RECORDS_PATH)
 
     # Avoid duplicate or missing vector-to-record mappings.
@@ -140,7 +139,7 @@ if __name__ == "__main__":
 
     print(f"Loaded search records: {len(records)}")
 
-    model = SentenceTransformer(MODEL_NAME)
+    model = SentenceTransformer(MODEL_NAME, revision=MODEL_REVISION, device="cpu")
 
     passages = prepare_passages(records, model)
 

@@ -13,6 +13,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_prefix="CIVIL_CODE_RAG_",
+        env_file=".env",
         extra="ignore",
     )
 

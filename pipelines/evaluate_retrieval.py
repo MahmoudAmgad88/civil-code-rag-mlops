@@ -7,6 +7,7 @@ from pathlib import Path
 
 from sentence_transformers import SentenceTransformer
 
+from civil_code_rag.release_artifact import MODEL_REVISION
 from pipelines.search_articles import (
     MODEL_NAME,
     load_index,
@@ -15,6 +16,7 @@ from pipelines.search_articles import (
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 QUESTIONS_PATH = PROJECT_ROOT / "eval" / "dev_questions.jsonl"
+
 
 def get_git_metadata():
     """Return the current Git commit and whether the working tree is dirty."""
@@ -30,6 +32,7 @@ def get_git_metadata():
     ).strip()
 
     return commit, bool(status)
+
 
 def load_semantic_questions(file_path):
     """Load only questions intended for semantic retrieval testing."""
@@ -74,17 +77,12 @@ def evaluate(
         )
         latency_ms = (time.perf_counter() - start) * 1000
 
-        retrieved_ids = [
-            result["record"]["article_id"]
-            for result in results
-        ]
+        retrieved_ids = [result["record"]["article_id"] for result in results]
 
         expected_ids = set(question["expected_article_ids"])
 
         if not expected_ids:
-            raise ValueError(
-                f"{question['id']} has no expected article IDs."
-            )
+            raise ValueError(f"{question['id']} has no expected article IDs.")
 
         found_ids = expected_ids.intersection(retrieved_ids)
         recall_at_k = len(found_ids) / len(expected_ids)
@@ -149,6 +147,7 @@ def evaluate(
 
     return summary
 
+
 if __name__ == "__main__":
     import mlflow
 
@@ -157,7 +156,7 @@ if __name__ == "__main__":
     questions = load_semantic_questions(QUESTIONS_PATH)
 
     embeddings, records = load_index()
-    model = SentenceTransformer(MODEL_NAME)
+    model = SentenceTransformer(MODEL_NAME, revision=MODEL_REVISION, device="cpu")
 
     summary = evaluate(
         questions,
@@ -172,8 +171,8 @@ if __name__ == "__main__":
 
     git_commit, git_dirty = get_git_metadata()
     import json
-    with mlflow.start_run(run_name=f"retrieval-eval-topk{TOP_K}"):
 
+    with mlflow.start_run(run_name=f"retrieval-eval-topk{TOP_K}"):
         mlflow.set_tag("project", "civil-code-rag")
         mlflow.set_tag("pipeline", "retrieval-evaluation")
         mlflow.set_tag("git_commit", git_commit)
@@ -186,8 +185,6 @@ if __name__ == "__main__":
             "eval/dev_questions.jsonl",
         )
         mlflow.log_param("question_count", len(questions))
-
-
 
         for language, metrics in summary.items():
             mlflow.log_metric(

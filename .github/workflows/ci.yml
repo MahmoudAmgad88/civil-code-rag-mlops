@@ -1,36 +1,43 @@
 name: CI
-
 on:
   push:
-    branches:
-      - main
-      - "feature/**"
-
+    branches: [main, "feature/**", "release/**"]
   pull_request:
-    branches:
-      - main
-
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   quality:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
         with:
+          version: "0.11.7"
           enable-cache: true
-
       - name: Set up Python
         run: uv python install 3.12
-
-      - name: Install dependencies
-        run: uv sync --locked --extra dev --extra embeddings
-
-      - name: Run Ruff
-        run: uv run ruff check .
-
-      - name: Run tests
-        run: uv run python -m pytest tests -q
+      - name: Install locked dependencies
+        run: uv sync --locked --extra dev --extra embeddings --python 3.12
+      - name: Ruff
+        run: uv run --locked ruff check .
+      - name: Reproduce release artifact without remote access
+        run: uv run --locked dvc repro
+      - name: Corpus integrity
+        run: uv run --locked python -m pipelines.validate_corpus
+      - name: Tests including restored index integrity
+        run: uv run --locked python -m pytest tests -q
+      - name: Docker build
+        run: docker build -t civil-code-rag:ci .
+      - name: Compose startup and API smoke
+        run: |
+          cp .env.example .env
+          docker compose up -d --wait --wait-timeout 120
+          uv run --locked python -m pipelines.smoke_api --expect-no-key
+      - name: Container logs
+        if: failure()
+        run: docker compose logs
+      - name: Stop services
+        if: always()
+        run: docker compose down
