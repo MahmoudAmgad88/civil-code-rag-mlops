@@ -120,3 +120,13 @@ git -c http.sslBackend=schannel push -u origin release/graduation-readiness
 ```
 
 Draft pull request: https://github.com/MahmoudAmgad88/civil-code-rag-mlops/pull/4 . It was created through GitHub's API because the connector was unavailable; authentication used Git's existing credential in memory. No merge was performed. Remote CI results must be checked on the final commit; local/container results do not imply a remote pass.
+
+
+## Verified GitHub Actions evidence
+
+Both remote workflows on implementation/evidence commit `ed27b9d` completed successfully:
+
+- PR run: https://github.com/MahmoudAmgad88/civil-code-rag-mlops/actions/runs/40180736356
+- Push run: https://github.com/MahmoudAmgad88/civil-code-rag-mlops/actions/runs/40180733060
+
+These ran locked dependency installation, Ruff, DVC artifact restoration, corpus integrity, pytest with the restored index, Docker build, Compose startup/API smoke and cleanup. API-reported workflow statuses are preserved in `docs/evidence/github-ci-ed27b9d.json`. The subsequent documentation-only commit adds this evidence without changing application, tests, artifacts or workflow code.

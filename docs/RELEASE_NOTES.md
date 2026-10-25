@@ -17,3 +17,5 @@ Deterministic validation: 81 tests passed in the existing Windows environment an
 Existing user edits to `.gitignore` were retained in the working tree and excluded from release commits. The user-created `.env.example` was expanded as requested. No `.env` contents or credentials were committed. No merge or push to main was performed.
 
 Draft PR: https://github.com/MahmoudAmgad88/civil-code-rag-mlops/pull/4 .
+
+Remote push and PR CI passed on ed27b9d, including Docker/Compose smoke. Links and status snapshots are retained in the validation report.

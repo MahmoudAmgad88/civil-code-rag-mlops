@@ -37,7 +37,7 @@ The starting branch was `docs/peer-review`. User changes were a modified `.gitig
 | Cached embedding compatibility | PASS | All 268 regenerated vectors matched exactly (maximum absolute difference 0.0) at pinned revision | Hardware/library changes may introduce numerical differences |
 | First-run model download | PASS | Separate clone's Linux container downloaded model into fresh cache; reported dimension 384 | Requires internet; timing/peak memory not benchmarked |
 | Live semantic generation | PASS | Clean-clone CPU container returned semantic/en, cited CC-91, nonempty answer using the existing key | Evaluator supplies their own valid key; latency/quality beyond this smoke is unmeasured |
-| CI graduation checks | PARTIAL | Workflow now restores/validates artifacts, tests and builds/smokes Docker | Remote workflow must run on the final pushed commit |
+| CI graduation checks | PASS | Push and PR workflows passed on ed27b9d, including locked install, Ruff, DVC/corpus/index tests, Docker and Compose HTTP smoke; run links in validation report | Final follow-up changes are documentation only; review PR checks before merging |
 | README clean-machine commands | PASS | Documented primary Compose startup validated in separate clone; no developer index mount | Follow certificate troubleshooting where applicable |
 | Full graduation rubric | PARTIAL | Explicit gap matrix; no fabricated scores, registry state or production claims | Resolve RAGAS, comparisons, serving and monitoring requirements with instructor |
 
