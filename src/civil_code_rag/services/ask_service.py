@@ -13,6 +13,7 @@ from civil_code_rag.retrieval.context_builder import build_context
 class AmbiguousArticleRequestError(Exception):
     """The user's article request does not specify one supported intent."""
 
+
 class ArticleTextUnavailableError(Exception):
     """The requested article has no original text in the requested language."""
 
@@ -70,13 +71,12 @@ class AskService:
             article = self.repository.get(decision["article_id"])
 
             if article is None:
-                raise ArticleNotFoundError(
-                    "Article not found in the available corpus."
-                )
+                raise ArticleNotFoundError("Article not found in the available corpus.")
 
             if article["alignment"] == "repealed":
                 return {
                     "route": "exact",
+                    "cited_article_ids": [],
                     "language": language,
                     "article_id": article["article_id"],
                     "answer": None,
@@ -88,14 +88,11 @@ class AskService:
                     ],
                 }
 
-            text_field = (
-                "text_ar_original"
-                if language == "ar"
-                else "text_en_original"
-            )
+            text_field = "text_ar_original" if language == "ar" else "text_en_original"
 
             return {
                 "route": "exact",
+                "cited_article_ids": [article["article_id"]],
                 "language": language,
                 "article_id": article["article_id"],
                 "answer": article[text_field],
@@ -117,9 +114,7 @@ class AskService:
             article = self.repository.get(decision["article_id"])
 
             if article is None:
-                raise ArticleNotFoundError(
-                    "Article not found in the available corpus."
-                )
+                raise ArticleNotFoundError("Article not found in the available corpus.")
 
             # A source note is not the original article text.
             # Never ask the LLM to invent an explanation for it.
@@ -129,8 +124,7 @@ class AskService:
                     "توجد ملاحظة في المصدر عن المواد 54–80، "
                     "لكن الحالة القانونية الحالية لم يتم التحقق منها."
                     if language == "ar"
-                    else
-                    "The original article text is unavailable in this source. "
+                    else "The original article text is unavailable in this source. "
                     "The source contains a note about Articles 54–80, "
                     "but the current legal status has not been verified."
                 )
@@ -151,11 +145,7 @@ class AskService:
                     "cited_article_ids": [],
                 }
 
-            text_field = (
-                "text_ar_original"
-                if language == "ar"
-                else "text_en_original"
-            )
+            text_field = "text_ar_original" if language == "ar" else "text_en_original"
 
             if not article[text_field]:
                 raise ArticleTextUnavailableError(
@@ -199,7 +189,6 @@ class AskService:
                 "answer": answer,
                 "cited_article_ids": sorted(cited_ids),
             }
-
 
         if decision["route"] == "semantic":
             results = self.retriever.search(

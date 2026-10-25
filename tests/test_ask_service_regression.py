@@ -24,7 +24,7 @@ def test_exact_lookup_preserves_complete_response_contract():
     result = create_service().ask("What does Article 91 say?")
     assert set(result) == {
         "route", "language", "article_id", "answer", "source_note",
-        "verified_status", "pdf_pages",
+        "verified_status", "pdf_pages", "cited_article_ids",
     }
     assert result["article_id"] == "CC-91"
 

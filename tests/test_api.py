@@ -11,7 +11,9 @@ from civil_code_rag.api.main import app
 from civil_code_rag.repositories.article_repository import ArticleRepository
 from civil_code_rag.services.ask_service import AskService
 
-CORPUS_PATH = Path(__file__).resolve().parents[1] / "data" / "processed" / "articles.jsonl"
+CORPUS_PATH = (
+    Path(__file__).resolve().parents[1] / "data" / "processed" / "articles.jsonl"
+)
 
 
 @pytest.fixture
@@ -35,7 +37,11 @@ def test_health_does_not_resolve_ask_service():
     finally:
         app.dependency_overrides.clear()
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    assert response.json() == {
+        "status": "ok",
+        "indexed_document_count": 268,
+        "corpus_record_count": 162,
+    }
 
 
 @pytest.mark.parametrize(
@@ -109,7 +115,11 @@ def test_semantic_route_with_controlled_dependencies(api):
 @pytest.mark.parametrize(
     ("question", "status", "detail"),
     [
-        ("What does Article 200 say?", 404, "Article not found in the available corpus."),
+        (
+            "What does Article 200 say?",
+            404,
+            "Article not found in the available corpus.",
+        ),
         (
             "Article 91",
             422,
@@ -135,6 +145,4 @@ def test_invalid_citation_returns_502(api):
     service.generator.generate.return_value = "Unsupported claim [CC-200]."
     response = client.post("/ask", json={"question": "Explain Article 91"})
     assert response.status_code == 502
-    assert response.json() == {
-        "detail": "Generated answer failed citation validation."
-    }
+    assert response.json() == {"detail": "Generated answer failed citation validation."}

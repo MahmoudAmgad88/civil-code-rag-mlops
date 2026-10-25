@@ -18,30 +18,24 @@ PROCESSED = ROOT / "data" / "processed"
 
 
 def test_frozen_corpus_and_index_counts_match_manifest():
-    manifest = json.loads(
-        (PROCESSED / "corpus_manifest.json").read_text("utf-8")
-    )
+    manifest = json.loads((PROCESSED / "corpus_manifest.json").read_text("utf-8"))
 
     article_count = sum(
         1
-        for line in (PROCESSED / "articles.jsonl").open(
-            "r", encoding="utf-8"
-        )
+        for line in (PROCESSED / "articles.jsonl").open("r", encoding="utf-8")
         if line.strip()
     )
 
     index_records_path = ROOT / "data" / "index" / "index_records.jsonl"
 
     if not index_records_path.exists():
-        pytest.skip(
+        pytest.fail(
             "DVC-managed retrieval index is not available. "
-            "Run 'dvc pull' before running full artifact integrity tests."
+            "Run 'python -m civil_code_rag.release_artifact' first."
         )
 
     index_record_count = sum(
-        1
-        for line in index_records_path.open("r", encoding="utf-8")
-        if line.strip()
+        1 for line in index_records_path.open("r", encoding="utf-8") if line.strip()
     )
 
     embeddings = np.load(ROOT / "data" / "index" / "embeddings.npy", allow_pickle=False)
@@ -63,7 +57,7 @@ def test_explain_source_note_article_never_calls_generator():
     service.generator.generate.assert_not_called()
 
 
-def test_health_does_not_require_corpus_or_optional_dependencies():
+def test_health_does_not_require_model_or_openai():
     def fail_if_service_is_built():
         raise AssertionError("The service must not be built for health checks.")
 
@@ -73,4 +67,8 @@ def test_health_does_not_require_corpus_or_optional_dependencies():
     finally:
         app.dependency_overrides.clear()
 
-    assert response.json() == {"status": "ok"}
+    assert response.json() == {
+        "status": "ok",
+        "indexed_document_count": 268,
+        "corpus_record_count": 162,
+    }
