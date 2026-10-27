@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 from openai import APIConnectionError
 
 from civil_code_rag.api import dependencies, main
+from civil_code_rag.api.security import require_client
 from civil_code_rag.config import PROJECT_ROOT, Settings
 from civil_code_rag.release_artifact import restore
 
@@ -52,6 +53,9 @@ def test_health_reports_unavailable_index(tmp_path, monkeypatch):
 )
 def test_no_key_generated_routes_fail_before_network(question, monkeypatch):
     monkeypatch.setenv("OPENAI_API_KEY", "")
+    monkeypatch.setitem(
+        main.app.dependency_overrides, require_client, lambda: "test-client"
+    )
     retriever = Mock(side_effect=AssertionError("Must not load model"))
     monkeypatch.setattr(dependencies, "get_retriever", retriever)
     dependencies.get_ask_service.cache_clear()
