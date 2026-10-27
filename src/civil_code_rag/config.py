@@ -3,6 +3,7 @@
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -21,6 +22,12 @@ class Settings(BaseSettings):
     index_dir: Path = PROJECT_ROOT / "data" / "index"
     embedding_model: str = "intfloat/multilingual-e5-small"
     llm_model: str = "gpt-4.1-mini"
+    # Client ID -> API key, as JSON: {"client-a": "key-a"}. Empty means /ask and
+    # /metrics refuse every request (fail closed) unless auth is disabled.
+    api_keys: dict[str, SecretStr] = {}
+    auth_disabled: bool = False
+    # Optional JSON-lines file for audit records, in addition to stdout.
+    audit_log_path: Path | None = None
 
 
 @lru_cache

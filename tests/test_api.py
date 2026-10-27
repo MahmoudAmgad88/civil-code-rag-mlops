@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 
 from civil_code_rag.api.dependencies import get_ask_service
 from civil_code_rag.api.main import app
+from civil_code_rag.api.security import require_client
 from civil_code_rag.repositories.article_repository import ArticleRepository
 from civil_code_rag.services.ask_service import AskService
 
@@ -22,6 +23,7 @@ def api():
     generator = Mock()
     service = AskService(ArticleRepository(CORPUS_PATH), retriever, generator)
     app.dependency_overrides[get_ask_service] = lambda: service
+    app.dependency_overrides[require_client] = lambda: "test-client"
     with TestClient(app) as client:
         yield client, service
     app.dependency_overrides.clear()

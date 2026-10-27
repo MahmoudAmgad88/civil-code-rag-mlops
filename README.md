@@ -45,7 +45,7 @@ docker compose up --build -d --wait --wait-timeout 180
 curl http://127.0.0.1:8000/health
 ```
 
-`cp` also works in PowerShell. Use `curl.exe` in Windows PowerShell if `curl` is an alias. Compose requires the `.env` file even when its key is blank. Before startup, optionally put an evaluator-provided `OPENAI_API_KEY` in `.env` to enable generated answers. Leaving it blank enables no-key review.
+`cp` also works in PowerShell. Use `curl.exe` in Windows PowerShell if `curl` is an alias. Compose requires the `.env` file even when its key is blank. Before startup, optionally put an evaluator-provided `OPENAI_API_KEY` in `.env` to enable generated answers. Leaving it blank enables no-key review. `/ask` and `/metrics` require an `X-API-Key` header; `.env.example` ships one local demo key (`local-demo-key-change-me`). An older `.env` without `CIVIL_CODE_RAG_API_KEYS` makes `/ask` return 503 until you add it (see [Authentication, request IDs, audit log and metrics](#authentication-request-ids-audit-log-and-metrics)).
 
 Expected health response:
 
@@ -291,6 +291,9 @@ The release distributes a small checked-in **index archive and provenance manife
 | `CIVIL_CODE_RAG_INDEX_DIR` | `data/index` locally |
 | `CIVIL_CODE_RAG_EMBEDDING_MODEL` | `intfloat/multilingual-e5-small` |
 | `CIVIL_CODE_RAG_LLM_MODEL` | `gpt-4.1-mini`; key must have access to this model |
+| `CIVIL_CODE_RAG_API_KEYS` | JSON map of client ID to API key, e.g. `{"local-demo":"local-demo-key-change-me"}`. Empty means `/ask` and `/metrics` return 503 (fail closed). |
+| `CIVIL_CODE_RAG_AUTH_DISABLED` | `false`. Set `true` only for local experiments; requests are then audited as client `anonymous`. |
+| `CIVIL_CODE_RAG_AUDIT_LOG_PATH` | Unset. Optional JSON-lines file for audit records; records always go to stdout. |
 
 Local Python reads `.env` in the current working directory; process environment values take priority. Prefixed settings are cached for the process lifetime. Without path overrides, the defaults are derived from the source checkout; the relative path values in `.env.example` assume you run from its root. Compose reads `.env` and sets the two data paths to their absolute container locations. Keep keys out of Git; `.env` is ignored and excluded from the Docker build context. Do not paste `docker compose config` output when using a real key; use `config --quiet` for validation.
 
@@ -303,17 +306,19 @@ The release index is tied to embedding revision `614241f622f53c4eeff9890bdc4f31c
 Interactive schemas: `http://127.0.0.1:8000/docs`.
 
 ```sh
-curl -X POST http://127.0.0.1:8000/ask -H "Content-Type: application/json" -d '{"question":"What does Article 91 say?"}'
-curl -X POST http://127.0.0.1:8000/ask -H "Content-Type: application/json" -d '{"question":"ما نص المادة ٩١؟"}'
-curl -X POST http://127.0.0.1:8000/ask -H "Content-Type: application/json" -d '{"question":"Explain Article 91"}'
-curl -X POST http://127.0.0.1:8000/ask -H "Content-Type: application/json" -d '{"question":"When does an expression of intent take effect?"}'
+KEY=local-demo-key-change-me
+curl -X POST http://127.0.0.1:8000/ask -H "X-API-Key: $KEY" -H "Content-Type: application/json" -d '{"question":"What does Article 91 say?"}'
+curl -X POST http://127.0.0.1:8000/ask -H "X-API-Key: $KEY" -H "Content-Type: application/json" -d '{"question":"ما نص المادة ٩١؟"}'
+curl -X POST http://127.0.0.1:8000/ask -H "X-API-Key: $KEY" -H "Content-Type: application/json" -d '{"question":"Explain Article 91"}'
+curl -X POST http://127.0.0.1:8000/ask -H "X-API-Key: $KEY" -H "Content-Type: application/json" -d '{"question":"When does an expression of intent take effect?"}'
+curl http://127.0.0.1:8000/metrics -H "X-API-Key: $KEY"
 ```
 
 The inline curl examples above target POSIX shells on Linux/macOS. Git Bash on Windows can corrupt inline Arabic arguments when invoking Windows curl; do not interpret that as an Arabic routing result. On Windows PowerShell, use `Invoke-RestMethod` with a UTF-8 body to avoid native-command quoting/encoding differences:
 
 ```powershell
 $body = [Text.Encoding]::UTF8.GetBytes('{"question":"ما نص المادة ٩١؟"}')
-Invoke-RestMethod http://127.0.0.1:8000/ask -Method Post -ContentType 'application/json; charset=utf-8' -Body $body
+Invoke-RestMethod http://127.0.0.1:8000/ask -Method Post -ContentType 'application/json; charset=utf-8' -Headers @{ 'X-API-Key' = 'local-demo-key-change-me' } -Body $body
 ```
 
 Exact-response fields (answer shortened here):
@@ -335,6 +340,23 @@ This is a schema illustration, not a complete verbatim article; the shortened `a
 | Semantic `/ask` question | OpenAI key + CPU embedding model | Language-isolated retrieval and grounded generation |
 
 Without a key, LLM-dependent routes return HTTP 503 with `{"detail":"OPENAI_API_KEY is required for generated answers."}` before model loading. OpenAI failures return a sanitized 503; invalid generated citations return 502. API routes use synchronous handlers, so FastAPI runs blocking model/HTTP work in its thread pool. Citation validation rejects recognized `[CC-n]` / `[PROM-n]` IDs absent from the supplied context. It does not enforce a nonempty citation list, assess whether each claim is supported, or verify current legal status. Language detection is a simple Arabic-character rule, and out-of-scope rejection handles explicit patterns rather than a general classifier. This MVP is not tuned for concurrent production traffic.
+
+### Authentication, request IDs, audit log and metrics
+
+| Concern | Behavior |
+|---|---|
+| Authentication | `/ask` and `/metrics` need `X-API-Key`. Each key maps to a client ID (`CIVIL_CODE_RAG_API_KEYS`), compared in constant time. Missing/wrong key: 401. No keys configured: 503, so a misconfigured deployment fails closed. `/health` stays open for container probes. |
+| Request ID | Every response carries `X-Request-ID`. A caller's ID is reused if it matches `[A-Za-z0-9._-]{1,64}`; otherwise a new UUID is generated. |
+| Audit log | One JSON line per `/ask` and `/metrics` request, to stdout and optionally `CIVIL_CODE_RAG_AUDIT_LOG_PATH`: timestamp, request ID, client ID, status, latency, outcome (`answered`, `out_of_scope`, `unauthorized`, `citation_validation_failed`, ...), route, language, cited article IDs, LLM model (generation routes only), embedding model and revision, and the release-index archive SHA-256. The question is stored only as a SHA-256 hash and a character count, never as text. |
+| Metrics | `/metrics` returns Prometheus text format: requests by method/path/status, a latency histogram per path, and `/ask` results by outcome and route. Unknown paths are collapsed to `other` to keep label cardinality bounded. Counters are in-process and reset on restart. |
+
+Example audit line:
+
+```json
+{"event":"api_audit","request_id":"smoke-request-1","client_id":"local-demo","path":"/ask","status_code":200,"latency_ms":5.08,"outcome":"answered","route":"exact","language":"en","cited_article_ids":["CC-91"],"question_sha256":"02f2dd5e…","question_chars":25,"llm_model":null,"embedding_model_revision":"614241f6…","index_archive_sha256":"84a3430e…"}
+```
+
+Limits: API keys identify clients but there are no roles or per-document permissions; keys live in environment configuration, not a secret manager; the audit log is not tamper-evident; metrics are per process and no Prometheus server or dashboard is included.
 
 ### API design lesson
 
@@ -796,6 +818,10 @@ Current practices:
 - citation validation
 - explicit out-of-scope handling
 - health endpoint
+- API-key authentication per named client, failing closed when no keys are configured
+- request IDs on every response
+- structured JSON audit log per request (question stored as a hash, not text)
+- Prometheus-format `/metrics` (requests, latency, answer outcomes)
 - checksummed versioned index restored in Docker image
 - dependency locking
 - frozen corpus validation
@@ -804,9 +830,10 @@ Current practices:
 Production improvements:
 
 - managed secret storage
-- authentication / authorization
+- SSO-based authentication and role / per-document authorization
 - rate limiting
-- audit logging
+- tamper-evident, centrally stored audit logs with retention policy
+- metrics scraping, dashboards and alerting
 - image vulnerability scanning
 - dependency/security scanning
 - stronger legal-data governance
